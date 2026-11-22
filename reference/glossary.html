@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Glossary &amp; Laravel-to-Gleam Mental Model — grrr</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Reference</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="../lessons/0001-domain-model-and-workspace-map.html">Lesson 0001</a>
+        <a href="../lessons/0002-composing-results-with-use-and-dual-target.html">Lesson 0002</a>
+        <a href="./glossary.html" aria-current="page">Glossary</a>
+        <a href="../MISSION.md">Mission</a>
+        <a href="../RESOURCES.md">Resources</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false">Mocha</button>
+      </div>
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <header class="reveal">
+      <p class="kicker">Living Reference · Print-Friendly</p>
+      <h1>Glossary &amp; Laravel-to-Gleam Mental Model</h1>
+      <p class="subtitle">The core vocabulary of Gleam, Glimr, Lustre, and the BEAM — anchored to Laravel/Livewire and Laravel/React.</p>
+    </header>
+
+    <section class="reveal">
+      <h2>1. Stack Translation Map</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Laravel / JS World</th>
+            <th>grrr Stack</th>
+            <th>Where the Analogy Holds</th>
+            <th>Where the Analogy Breaks (The Upgrade)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Laravel</strong></td>
+            <td><strong><a href="https://glimr.build/">Glimr</a></strong> (on Wisp + BEAM)</td>
+            <td>Batteries-included routing, controllers, middleware, migrations, sessions, auth (<code>glimr_auth</code>).</td>
+            <td>No mutable request-global service container or magic facades; dependencies are passed explicitly as typed values, and every request runs in a lightweight BEAM process.</td>
+          </tr>
+          <tr>
+            <td><strong>Blade / Livewire</strong></td>
+            <td><strong>Loom</strong> (Glimr's template engine)</td>
+            <td>Server-rendered HTML templates with components, slots, directives, and server-driven reactivity for the admin portal.</td>
+            <td>Templates compile down to type-checked Gleam code — missing variables or mismatched types fail at compile time, not in production.</td>
+          </tr>
+          <tr>
+            <td><strong>React / Vue</strong></td>
+            <td><strong><a href="https://hexdocs.pm/lustre/">Lustre</a></strong> (MVU / Elm Architecture)</td>
+            <td>Declarative UI components, SPA client routing, and interactive islands mounted onto DOM nodes.</td>
+            <td>No hooks rules, no mutable component refs, no <code>useEffect</code> dependency arrays. One immutable <code>Model</code>, explicit <code>Msg</code> variants, pure <code>update</code>, and managed <code>Effect</code>s.</td>
+          </tr>
+          <tr>
+            <td><strong>FormRequest / DTO + TS types</strong></td>
+            <td><strong>Shared Gleam Package (<code>shared/</code>)</strong></td>
+            <td>Defines domain models, validation rules, and JSON contracts.</td>
+            <td>Compiled to <em>both</em> Erlang (BEAM) and JavaScript from one source of truth — zero API type drift between backend and frontend.</td>
+          </tr>
+          <tr>
+            <td><strong>Reverb / Pusher + Redis</strong></td>
+            <td><strong>BEAM / OTP Actors (<code>gleam_otp</code>)</strong></td>
+            <td>Powers live timeline fan-out and online user presence.</td>
+            <td>Stateful, isolated processes live natively inside the BEAM VM with supervision trees — no separate Redis broker required for single-node live state.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="reveal">
+      <h2>2. Core Gleam &amp; FP Terms</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Term</th>
+            <th>Definition</th>
+            <th>Primary Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Custom Type</strong></td>
+            <td>An algebraic data type (tagged union / sum type) whose variants can each carry typed fields. Checked exhaustively by <code>case</code>.</td>
+            <td><a href="https://tour.gleam.run/data-types/custom-types/">Gleam Tour: Custom Types</a></td>
+          </tr>
+          <tr>
+            <td><strong>Opaque Type</strong></td>
+            <td>A <code>pub opaque type</code> whose name is exported, but whose constructors stay private to its defining module. External code <em>must</em> go through your smart constructors.</td>
+            <td><a href="https://tour.gleam.run/data-types/opaque-types/">Gleam Tour: Opaque Types</a></td>
+          </tr>
+          <tr>
+            <td><strong>Smart Constructor</strong></td>
+            <td>A public function (e.g. <code>post.new_body(raw)</code>) that validates raw input and returns <code>Result(ValidType, DomainError)</code>, making invalid instances impossible to forge.</td>
+            <td><a href="https://tour.gleam.run/data-types/opaque-types/">Gleam Tour: Opaque Types</a></td>
+          </tr>
+          <tr>
+            <td><strong><code>Result(ok, err)</code></strong></td>
+            <td>Gleam's explicit error type (<code>Ok(value)</code> or <code>Error(reason)</code>). Gleam has no exceptions for control flow; callers must handle failure.</td>
+            <td><a href="https://tour.gleam.run/data-types/results/">Gleam Tour: Results</a></td>
+          </tr>
+          <tr>
+            <td><strong>Dual Target (BEAM + JS)</strong></td>
+            <td>Pure Gleam modules compile to both Erlang bytecode (for Glimr on the server) and JavaScript ESM (for Lustre in the browser).</td>
+            <td><a href="https://gleam.run/documentation/">Gleam Docs</a></td>
+          </tr>
+          <tr>
+            <td><strong>MVU (Model-View-Update)</strong></td>
+            <td>Lustre's unidirectional architecture: <code>Model</code> holds state, <code>view</code> renders HTML from state, events emit <code>Msg</code>, and <code>update</code> computes the next <code>#(Model, Effect)</code>.</td>
+            <td><a href="https://hexdocs.pm/lustre/">Lustre HexDocs</a></td>
+          </tr>
+          <tr>
+            <td><strong><code>use</code> Expression</strong></td>
+            <td>Gleam syntax sugar (<code>use x &lt;- f(arg)</code>) that passes the remaining lines of a block as an anonymous callback <code>fn(x) { ... }</code> to <code>f</code>. Eliminates nested callback pyramids in <code>Result</code> pipelines and Glimr/Wisp middleware.</td>
+            <td><a href="https://tour.gleam.run/advanced-features/use/">Gleam Tour: use</a></td>
+          </tr>
+          <tr>
+            <td><strong><code>result.try</code> &amp; <code>result.map_error</code></strong></td>
+            <td><code>result.try</code> chains fallible steps and short-circuits on the first <code>Error</code>; <code>result.map_error</code> wraps distinct error types into a unified union so they can be chained.</td>
+            <td><a href="https://hexdocs.pm/gleam_stdlib/gleam/result.html">gleam/result HexDocs</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+</body>
+</html>

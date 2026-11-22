@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0001: The grrr Architecture Map &amp; Unforgeable Domain Types</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0001</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html" aria-current="page">Lesson 0001</a>
+        <a href="../reference/glossary.html">Glossary</a>
+        <a href="../MISSION.md">Mission</a>
+        <a href="../RESOURCES.md">Resources</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/3</span>
+      </div>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL CONSTELLATION -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0001 · Foundation &amp; Domain Modeling</p>
+        <h1>The <code>grrr</code> Architecture Map &amp; Unforgeable Domain Types</h1>
+        <p class="subtitle">
+          Before booting Glimr or Lustre, build the one superpower Laravel + React cannot give you: a shared, type-safe domain core compiled to both BEAM and JavaScript.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge gleam">◇ Gleam Shared Core</span>
+          <span class="domain-badge glimr">■ Glimr + Loom (BEAM)</span>
+          <span class="domain-badge lustre">▲ Lustre SPA (JS)</span>
+          <span class="domain-badge beam">● BEAM / OTP Live</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Toolchain:</strong> Gleam 1.19 · OTP 29</span>
+          <span><strong>Shortcuts:</strong> <code>t</code> Theme · <code>g</code> Glow · <code>m</code> Audio</span>
+        </div>
+      </div>
+
+      <!-- 3D Orbital Stage -->
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D grrr architecture constellation. Drag or use arrow keys to rotate.">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">grrr</div>
+            <div class="prism-face f2">Glimr</div>
+            <div class="prism-face f3">Lustre</div>
+            <div class="prism-face f4">BEAM</div>
+            <div class="prism-face f5">Ok(a)</div>
+            <div class="prism-face f6">Err(e)</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- 3D TILT CARDS: LARAVEL MENTAL MODEL BRIDGE -->
+    <section id="sec-stack" class="reveal">
+      <h2>1. Your Laravel Mental Model — Upgraded for the BEAM</h2>
+      <p>
+        Move your cursor over each card (or click to hear its domain chime). Your Laravel intuition translates directly — with two major architectural upgrades: a <strong>dual-target shared core</strong> and <strong>native BEAM/OTP live state</strong>.
+      </p>
+
+      <div class="tilt-grid">
+        <article class="tilt-card gleam" data-sound="gleam" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>shared/ Core</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--gleam)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <polygon points="24,10 36,24 24,38 12,24" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>vs. Laravel:</strong> Replaces duplicated FormRequests + TypeScript DTOs.</p>
+          <p>Pure Gleam opaque types &amp; JSON codecs compiled to <em>both</em> Erlang and JavaScript.</p>
+        </article>
+
+        <article class="tilt-card glimr" data-sound="glimr" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>Glimr + Loom</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--glimr)" stroke-width="1.5" stroke-dasharray="8 5"/>
+              <rect x="13" y="13" width="22" height="22" rx="5" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>vs. Laravel:</strong> Glimr ≈ Laravel, Loom ≈ Blade/Livewire.</p>
+          <p>Powers the <strong>admin portal</strong>, DB migrations, <code>glimr_auth</code>, and JSON API.</p>
+        </article>
+
+        <article class="tilt-card lustre" data-sound="lustre" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>Lustre SPA</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--lustre)" stroke-width="1.5" stroke-dasharray="5 5"/>
+              <polygon points="24,11 37,34 11,34" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>vs. Laravel:</strong> React / Vue (Elm MVU architecture).</p>
+          <p>Powers the user-facing <code>grrr</code> SPA + optional interactive admin islands.</p>
+        </article>
+
+        <article class="tilt-card beam" data-sound="beam" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>BEAM / OTP</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--beam)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <circle cx="24" cy="24" r="9" fill="var(--beam-tint)" stroke="var(--beam)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>vs. Laravel:</strong> Replaces Reverb/Pusher + Redis presence.</p>
+          <p>Isolated supervised actors inside the VM handle live timeline updates &amp; online presence.</p>
+        </article>
+      </div>
+
+      <!-- ANIMATED ARCHITECTURE FLOW SVG -->
+      <figure class="diagram">
+        <svg viewBox="0 0 860 365" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated grrr dual-target architecture diagram">
+          <defs>
+            <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--gleam)"/>
+            </marker>
+            <marker id="arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--beam)"/>
+            </marker>
+          </defs>
+
+          <!-- SHARED CORE -->
+          <rect x="235" y="16" width="390" height="90" rx="12" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="430" y="42" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="var(--gleam-ink)">◇ shared/ — Pure Gleam Domain Core</text>
+          <text x="430" y="64" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="var(--text)">Opaque types: GrrrBody, Handle · Validation · JSON Codecs</text>
+          <text x="430" y="86" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--subtext0)">Compiles identically to Erlang (BEAM) &amp; JavaScript (Browser)</text>
+
+          <!-- Animated compile edges -->
+          <path class="flow-line" d="M 330 106 L 220 156" stroke="var(--gleam)" stroke-width="2.2" fill="none" marker-end="url(#arr-g)"/>
+          <text x="215" y="130" font-family="monospace" font-size="11" font-weight="700" fill="var(--gleam-ink)">target = erlang</text>
+
+          <path class="flow-line" d="M 530 106 L 640 156" stroke="var(--gleam)" stroke-width="2.2" fill="none" marker-end="url(#arr-g)"/>
+          <text x="545" y="130" font-family="monospace" font-size="11" font-weight="700" fill="var(--gleam-ink)">target = javascript</text>
+
+          <!-- SERVER -->
+          <rect x="20" y="160" width="390" height="186" rx="12" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="215" y="186" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="var(--glimr-ink)">■ server/ — Glimr on BEAM (≈ Laravel)</text>
+
+          <rect x="38" y="200" width="170" height="62" rx="8" fill="var(--mantle)" stroke="var(--glimr)" stroke-width="1.2"/>
+          <text x="123" y="220" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="750" fill="var(--text)">Admin Portal</text>
+          <text x="123" y="238" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">Loom templates (≈ Blade)</text>
+          <text x="123" y="253" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="var(--subtext0)">+ optional Lustre islands</text>
+
+          <rect x="222" y="200" width="170" height="62" rx="8" fill="var(--mantle)" stroke="var(--glimr)" stroke-width="1.2"/>
+          <text x="307" y="220" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="750" fill="var(--text)">JSON API + Auth</text>
+          <text x="307" y="238" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">glimr_auth · Migrations</text>
+          <text x="307" y="253" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="var(--subtext0)">SQLite / PostgreSQL</text>
+
+          <rect x="38" y="274" width="354" height="56" rx="8" fill="var(--mantle)" stroke="var(--beam)" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <text x="215" y="296" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="var(--beam-ink)">● BEAM / OTP Actors (gleam_otp)</text>
+          <text x="215" y="315" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">Live timeline PubSub + Online Presence</text>
+
+          <!-- CLIENT -->
+          <rect x="465" y="160" width="375" height="186" rx="12" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="652" y="186" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="var(--lustre-ink)">▲ client/ — Lustre SPA (≈ React / Vue)</text>
+
+          <rect x="485" y="200" width="335" height="62" rx="8" fill="var(--mantle)" stroke="var(--lustre)" stroke-width="1.2"/>
+          <text x="652" y="222" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="750" fill="var(--text)">Model → View → Msg → Update</text>
+          <text x="652" y="242" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">Timeline, Compose Grrr, Likes, Replies, Follows</text>
+
+          <rect x="485" y="274" width="335" height="56" rx="8" fill="var(--mantle)" stroke="var(--lustre)" stroke-width="1.2"/>
+          <text x="652" y="296" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="750" fill="var(--text)">Managed Effects (lustre/effect)</text>
+          <text x="652" y="315" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">HTTP JSON calls + WebSocket subscription</text>
+
+          <!-- Live HTTP/WS lines -->
+          <path class="flow-line" d="M 412 232 L 463 232" stroke="var(--glimr)" stroke-width="2.2" fill="none" marker-start="url(#arr-g)" marker-end="url(#arr-g)"/>
+          <text x="437" y="222" text-anchor="middle" font-family="monospace" font-size="10" font-weight="800" fill="var(--text)">JSON</text>
+
+          <path class="flow-line" d="M 412 302 L 463 302" stroke="var(--beam)" stroke-width="2.2" fill="none" marker-start="url(#arr-b)" marker-end="url(#arr-b)"/>
+          <text x="437" y="292" text-anchor="middle" font-family="monospace" font-size="10" font-weight="800" fill="var(--beam-ink)">WS</text>
+        </svg>
+        <figcaption>
+          <strong>Figure 1:</strong> Dual-target architecture of <code>grrr</code>. See the <a href="../reference/glossary.html">Glossary</a> for the full Laravel-to-Gleam translation table.
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- INTERACTIVE SMART CONSTRUCTOR GATE SIMULATOR -->
+    <section id="sec-opaque" class="reveal">
+      <h2>2. Parse, Don't Validate: Live Smart-Constructor Gate</h2>
+      <p>
+        In Laravel, a <code>FormRequest</code> validates a string at the HTTP edge, yet downstream methods still accept any plain <code>string</code>. In Gleam, marking <code>GrrrBody</code> as a
+        <a href="https://tour.gleam.run/data-types/opaque-types/"><code>pub opaque type</code></a> hides its constructor outside <code>grrr/post</code> — making unvalidated posts a <strong>compile error</strong>.
+      </p>
+
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Interactive Simulator: Test <code>post.new_body(raw)</code></h3>
+          <div class="sim-controls">
+            <button type="button" class="ctrl-btn" data-preset="valid">Valid + Emoji 🐻</button>
+            <button type="button" class="ctrl-btn" data-preset="empty">Whitespace Only</button>
+            <button type="button" class="ctrl-btn" data-preset="long">281 Chars</button>
+            <button type="button" class="ctrl-btn" data-preset="bypass">Try Opaque Bypass!</button>
+          </div>
+        </div>
+
+        <div class="sim-input-row">
+          <input type="text" id="sim-raw" class="sim-input" value="  hello gleam 🐻  " aria-label="Raw post text to validate">
+          <button type="button" class="btn-primary" id="sim-run">Run Through Gate</button>
+        </div>
+
+        <svg id="gate-svg" viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Smart Constructor validation gate">
+          <defs>
+            <filter id="pkt-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Untrusted box -->
+          <rect x="14" y="60" width="150" height="70" rx="10" fill="var(--err-tint)" stroke="var(--err)" stroke-width="1.6"/>
+          <text x="89" y="88" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="var(--err-ink)">Untrusted String</text>
+          <text x="89" y="109" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--subtext0)">raw input</text>
+
+          <!-- Track to gate -->
+          <line x1="164" y1="95" x2="238" y2="95" stroke="var(--surface2)" stroke-width="3" stroke-dasharray="6 5"/>
+
+          <!-- Smart Constructor Gate -->
+          <rect id="gate-box" x="238" y="38" width="220" height="114" rx="12" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2.2"/>
+          <text x="348" y="64" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="850" fill="var(--gleam-ink)">OPAQUE GATE</text>
+          <text x="348" y="86" text-anchor="middle" font-family="monospace" font-size="12.5" font-weight="700" fill="var(--text)">post.new_body(raw)</text>
+          <text x="348" y="110" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">1. string.trim(raw)</text>
+          <text x="348" y="128" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--subtext0)">2. 1..=280 graphemes</text>
+
+          <!-- Output Tracks -->
+          <path d="M 458 72 L 542 48" stroke="var(--ok)" stroke-width="2.5" fill="none" stroke-dasharray="6 4"/>
+          <path d="M 458 118 L 542 142" stroke="var(--err)" stroke-width="2.5" fill="none" stroke-dasharray="6 4"/>
+
+          <!-- Ok Node -->
+          <rect id="ok-box" x="542" y="16" width="264" height="64" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="674" y="42" text-anchor="middle" font-family="monospace" font-size="12.5" font-weight="800" fill="var(--ok-ink)">Ok(GrrrBody)</text>
+          <text x="674" y="62" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--text)">Proven valid · safe for DB &amp; UI</text>
+
+          <!-- Err Node -->
+          <rect id="err-box" x="542" y="110" width="264" height="64" rx="10" fill="var(--err-tint)" stroke="var(--err)" stroke-width="2"/>
+          <text x="674" y="136" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--err-ink)">Error(Empty | TooLong)</text>
+          <text x="674" y="156" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--text)">Typed failure · 422 / form error</text>
+
+          <!-- Animated glowing packet -->
+          <circle id="gate-pkt" cx="164" cy="95" r="9" fill="var(--gleam)" filter="url(#pkt-glow)"/>
+        </svg>
+
+        <div class="sim-metrics">
+          <div class="sim-metric">
+            <div class="sim-metric-label">Gleam string.length</div>
+            <div class="sim-metric-val" id="m-gleam">14 graphemes</div>
+          </div>
+          <div class="sim-metric">
+            <div class="sim-metric-label">JS str.length</div>
+            <div class="sim-metric-val" id="m-js">15 UTF-16 units</div>
+          </div>
+          <div class="sim-metric">
+            <div class="sim-metric-label">PHP strlen()</div>
+            <div class="sim-metric-val" id="m-php">17 UTF-8 bytes</div>
+          </div>
+          <div class="sim-metric">
+            <div class="sim-metric-label">Compiler Guarantee</div>
+            <div class="sim-metric-val" id="m-proof">Unforgeable</div>
+          </div>
+        </div>
+
+        <div class="sim-result-banner is-ok" id="sim-banner" aria-live="polite">
+          Ok(GrrrBody("hello gleam 🐻"))
+        </div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>Laravel (Runtime Convention)</h3>
+<pre><code>// StoreGrrrRequest.php
+public function rules(): array {
+  return ['body' =&gt; ['required', 'string', 'max:280']];
+}
+
+// Downstream still accepts any plain string:
+function publish(string $body): Grrr { ... }</code></pre>
+          <p><small>If another caller skips the FormRequest, PHP happily accepts <code>""</code> or 1,000 chars.</small></p>
+        </div>
+        <div class="compare-card">
+          <h3>Gleam (Compile-Time Proof)</h3>
+<pre><code>pub opaque type GrrrBody {
+  GrrrBody(String)
+}
+
+// Downstream requires the proof type:
+pub fn publish(body: GrrrBody) -&gt; ...</code></pre>
+          <p><small>External modules cannot call <code>GrrrBody("")</code>. Passing a raw <code>String</code> to <code>publish</code> refuses to compile.</small></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HANDS-ON EXERCISE -->
+    <section id="sec-lab" class="reveal">
+      <h2>3. Hands-On Lab (8 minutes)</h2>
+      <p>Open your terminal in <code>/Users/s-a-c/antigravity/grrr</code> and build the first real package of <code>grrr</code>.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Scaffold the <code>shared</code> Gleam package</strong>
+<pre><code>cd /Users/s-a-c/antigravity/grrr
+gleam new shared
+cd shared
+gleam test</code></pre>
+          You should see <code>1 passed, 0 failures</code> immediately.
+        </li>
+
+        <li>
+          <strong>Create <code>shared/src/grrr/post.gleam</code></strong>
+<pre><code>import gleam/string
+
+pub const max_body_length = 280
+
+pub opaque type GrrrBody {
+  GrrrBody(String)
+}
+
+pub type BodyError {
+  Empty
+  TooLong(length: Int, max: Int)
+}
+
+pub fn new_body(raw: String) -&gt; Result(GrrrBody, BodyError) {
+  let trimmed = string.trim(raw)
+  let len = string.length(trimmed)
+
+  case len {
+    0 -&gt; Error(Empty)
+    n if n &gt; max_body_length -&gt; Error(TooLong(length: n, max: max_body_length))
+    _ -&gt; Ok(GrrrBody(trimmed))
+  }
+}
+
+pub fn to_string(body: GrrrBody) -&gt; String {
+  let GrrrBody(text) = body
+  text
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Write tests in <code>shared/test/grrr_post_test.gleam</code> and run <code>gleam test</code></strong>
+<pre><code>import gleeunit/should
+import grrr/post.{Empty, TooLong}
+
+pub fn valid_body_trims_whitespace_test() {
+  let assert Ok(body) = post.new_body("  hello gleam 🐻  ")
+  post.to_string(body)
+  |&gt; should.equal("hello gleam 🐻")
+}
+
+pub fn whitespace_only_is_empty_error_test() {
+  post.new_body("   \n\t  ")
+  |&gt; should.equal(Error(Empty))
+}
+
+pub fn over_280_graphemes_is_too_long_test() {
+  let long = "a" |&gt; repeat(281)
+  post.new_body(long)
+  |&gt; should.equal(Error(TooLong(length: 281, max: 280)))
+}
+
+fn repeat(s: String, times: Int) -&gt; String {
+  case times &lt;= 0 {
+    True -&gt; ""
+    False -&gt; s &lt;&gt; repeat(s, times - 1)
+  }
+}</code></pre>
+          Run <code>gleam test</code> — all tests should pass!
+        </li>
+
+        <li>
+          <strong>2-Minute Proof: Try to cheat your own type</strong><br>
+          In <code>grrr_post_test.gleam</code>, temporarily call <code>post.GrrrBody("bypass")</code> and run <code>gleam test</code>. Watch the compiler block it because <code>GrrrBody</code> is <code>opaque</code>, then delete that line so your suite is green again.
+        </li>
+      </ol>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0001 Win Condition</p>
+        <p>
+          You have a real <code>shared/</code> Gleam package with an unforgeable <code>GrrrBody</code> type, green tests, and firsthand proof of opaque-type enforcement. Next in Lesson 0002: <code>Handle</code> + Gleam's <code>use</code> expression + booting your <strong>Glimr</strong> server.
+        </p>
+      </div>
+    </section>
+
+    <!-- RETRIEVAL QUIZ -->
+    <section id="sec-quiz" class="reveal">
+      <h2>4. Quick Retrieval Check</h2>
+      <p>Answer from memory before scrolling back — active recall builds long-term storage strength.</p>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">1. Why mark <code>GrrrBody</code> as <code>pub opaque type</code> instead of <code>pub type</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="External modules CAN name an opaque type in type annotations; only its constructor is hidden.">External modules cannot reference the type name anywhere.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Hiding the constructor forces every caller outside grrr/post to go through new_body.">External modules cannot call its private constructor directly.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Values of an opaque type can be passed freely between functions and modules once constructed.">External modules cannot pass the value between functions.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Opaque types compile cleanly to both Erlang (BEAM) and JavaScript targets.">External modules cannot compile it for JavaScript targets.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">2. In <code>grrr</code>, what is the main advantage of placing <code>GrrrBody</code> inside <code>shared/</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr still owns database schemas and migrations on the server.">It replaces Glimr database migrations with typed code.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Loom templates render on the server in Glimr; Lustre renders in the browser.">It compiles Loom templates directly into browser apps.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Pure Gleam in shared/ compiles to both Erlang (Glimr) and JavaScript (Lustre) with zero drift.">Both Glimr and Lustre share identical domain rules.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="HTTP between Glimr and the Lustre SPA still uses JSON; shared/ can hold the codecs for both ends.">It removes every need for JSON API serialization.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">3. Why does <code>new_body</code> return <code>Result(GrrrBody, BodyError)</code> instead of throwing an exception?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam has no exceptions for control flow; Result makes failure part of the function's type signature.">Callers must handle errors at compile time.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Gleam does not use try/catch exceptions for validation; it models errors explicitly with Result.">Gleam catches thrown errors in Wisp routes.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Returning Error(...) is normal, cheap, and never crashes a BEAM process.">BEAM actors crash on returned error values.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Custom types compile to plain JavaScript classes/objects and work seamlessly in browsers.">Browsers reject code using custom error types.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score>Answered 0 / 3 · Correct 0 / 3</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset Quiz</button>
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <div class="footer-grid">
+        <div class="footer-box">
+          <h3>Primary Source Reading</h3>
+          <p>
+            Read the official 2-minute interactive guide on
+            <a href="https://tour.gleam.run/data-types/opaque-types/">Gleam Language Tour: Opaque Types</a>
+            and skim <a href="https://hexdocs.pm/gleam_stdlib/gleam/string.html"><code>gleam/string</code> HexDocs</a>.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Community &amp; Wisdom</h3>
+          <p>
+            Join the <a href="https://discord.gg/Fm8aMwZ">Gleam Discord Server</a> (<code>#help</code> and <code>#web</code> channels) or browse <a href="https://www.reddit.com/r/gleam/">r/gleam</a> to see how production teams structure shared BEAM + JS packages.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Ask Your Teacher</h3>
+          <p>
+            Stuck on a compiler error, curious how <code>GrrrBody</code> compares to Eloquent casts, or finished the exercise and ready for Lesson 0002? Ask me in chat anytime.
+          </p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    /* Mount Lesson 0001 3D Orbital Constellation */
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'GrrrBody',     sub: 'pub opaque type',      ring: 0, idx: 0, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-opaque', snd: 'gleam' },
+        { label: 'Glimr Server', sub: 'BEAM ≈ Laravel',       ring: 0, idx: 1, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-stack',  snd: 'glimr' },
+        { label: 'Lustre SPA',   sub: 'MVU ≈ React/Vue',      ring: 0, idx: 2, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-stack',  snd: 'lustre' },
+        { label: 'BEAM OTP',     sub: 'Live + Presence',      ring: 0, idx: 3, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-stack',  snd: 'beam' },
+        { label: 'Loom Admin',   sub: 'Typed ≈ Blade/LW',     ring: 1, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-stack',  snd: 'glimr' },
+        { label: 'Result(a, e)', sub: 'No exceptions',        ring: 1, idx: 1, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-opaque', snd: 'pass' },
+        { label: 'Dual Target',  sub: 'Erlang + JS emit',     ring: 1, idx: 2, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab',    snd: 'gleam' },
+        { label: 'gleam test',   sub: '8-min hands-on win',   ring: 1, idx: 3, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-lab',    snd: 'lustre' }
+      ]);
+    }
+
+    /* Interactive Smart Constructor Gate Simulator */
+    const rawEl = document.getElementById('sim-raw');
+    const pkt = document.getElementById('gate-pkt');
+    const banner = document.getElementById('sim-banner');
+    const mGleam = document.getElementById('m-gleam');
+    const mJs = document.getElementById('m-js');
+    const mPhp = document.getElementById('m-php');
+    const mProof = document.getElementById('m-proof');
+    const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null;
+
+    function countGraphemes(s) {
+      if (seg) return Array.from(seg.segment(s)).length;
+      return Array.from(s).length;
+    }
+
+    function animatePacket(points, color) {
+      pkt.setAttribute('fill', color);
+      if (!window.GrrrEnv || !window.GrrrEnv.motion) {
+        const last = points[points.length - 1];
+        pkt.setAttribute('cx', last[0]);
+        pkt.setAttribute('cy', last[1]);
+        return;
+      }
+      const start = performance.now();
+      const dur = 520;
+      function frame(now) {
+        const t = Math.min(1, (now - start) / dur);
+        const totalSegs = points.length - 1;
+        const scaled = t * totalSegs;
+        const idx = Math.min(totalSegs - 1, Math.floor(scaled));
+        const localT = scaled - idx;
+        const ease = 1 - Math.pow(1 - localT, 3);
+        const [x0, y0] = points[idx];
+        const [x1, y1] = points[idx + 1];
+        pkt.setAttribute('cx', (x0 + (x1 - x0) * ease).toFixed(1));
+        pkt.setAttribute('cy', (y0 + (y1 - y0) * ease).toFixed(1));
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function runGate(mode) {
+      const sfx = window.GrrrSFX || { pass() {}, fail() {} };
+      if (mode === 'bypass') {
+        animatePacket([[164, 95], [238, 95], [195, 65], [164, 95]], 'var(--err)');
+        mGleam.textContent = 'Blocked';
+        mJs.textContent = 'N/A';
+        mPhp.textContent = 'N/A';
+        mProof.textContent = 'Compile Error';
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = 'Compile Error: Unknown value `GrrrBody` in module `grrr/post` — type is opaque! Use `post.new_body(raw)` instead.';
+        sfx.fail();
+        return;
+      }
+
+      const raw = rawEl.value;
+      const trimmed = raw.trim();
+      const graphemes = countGraphemes(trimmed);
+      const utf16 = trimmed.length;
+      const utf8 = new TextEncoder().encode(trimmed).length;
+
+      mGleam.textContent = `${graphemes} graphemes`;
+      mJs.textContent = `${utf16} UTF-16 units`;
+      mPhp.textContent = `${utf8} UTF-8 bytes`;
+
+      if (graphemes === 0) {
+        mProof.textContent = 'Error(Empty)';
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = 'Error(Empty)  // Whitespace-only input rejected at the boundary';
+        animatePacket([[164, 95], [348, 95], [458, 118], [542, 142]], 'var(--err)');
+        sfx.fail();
+      } else if (graphemes > 280) {
+        mProof.textContent = 'Error(TooLong)';
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = `Error(TooLong(length: ${graphemes}, max: 280))`;
+        animatePacket([[164, 95], [348, 95], [458, 118], [542, 142]], 'var(--err)');
+        sfx.fail();
+      } else {
+        mProof.textContent = 'Ok(GrrrBody)';
+        banner.className = 'sim-result-banner is-ok';
+        const preview = trimmed.length > 48 ? trimmed.slice(0, 48) + '…' : trimmed;
+        banner.textContent = `Ok(GrrrBody("${preview}"))`;
+        animatePacket([[164, 95], [348, 95], [458, 72], [542, 48]], 'var(--ok)');
+        sfx.pass();
+      }
+    }
+
+    document.getElementById('sim-run').addEventListener('click', () => runGate('eval'));
+    rawEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') runGate('eval'); });
+
+    document.querySelectorAll('[data-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const p = btn.dataset.preset;
+        if (p === 'valid')  { rawEl.value = '  hello gleam 🐻  '; runGate('eval'); }
+        if (p === 'empty')  { rawEl.value = '    \t   '; runGate('eval'); }
+        if (p === 'long')   { rawEl.value = 'a'.repeat(281); runGate('eval'); }
+        if (p === 'bypass') { runGate('bypass'); }
+      });
+    });
+  });
+  </script>
+</body>
+</html>
