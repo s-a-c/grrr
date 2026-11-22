@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0003: Booting Your Glimr Server &amp; Wiring shared/</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+  <style>
+    .tree-explorer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+    }
+    @media (min-width: 820px) {
+      .tree-explorer {
+        grid-template-columns: minmax(0, 10fr) minmax(0, 12fr);
+      }
+    }
+    .tree-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+    .tree-item {
+      appearance: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--surface1);
+      background-color: var(--crust);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+    }
+    .tree-item:hover {
+      border-color: var(--glimr);
+      transform: translateX(3px);
+    }
+    .tree-item[aria-pressed="true"] {
+      border-color: var(--glimr);
+      background-color: var(--glimr-tint);
+      color: var(--glimr-ink);
+      box-shadow: 0 0 16px var(--glimr-glow);
+    }
+    .tree-tag {
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--subtext0);
+    }
+    .tree-detail {
+      background-color: var(--crust);
+      border: 1.5px solid var(--glimr);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.65rem;
+      box-shadow: 0 0 20px var(--glimr-glow);
+    }
+    .tree-detail h4 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--glimr-ink);
+    }
+    .tree-detail p {
+      margin: 0;
+      font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0003</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html">0001</a>
+        <a href="./0002-composing-results-with-use-and-dual-target.html">0002</a>
+        <a href="./0003-booting-glimr-and-wiring-shared.html" aria-current="page">Lesson 0003</a>
+        <a href="../reference/glossary.html">Glossary</a>
+        <a href="../docs/REPO-MANAGEMENT.md">Repo Guide</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/4</span>
+      </div>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0003 · Glimr Server &amp; Monorepo Path Wiring</p>
+        <h1>Booting Your <code>Glimr</code> Server &amp; Wiring <code>shared/</code></h1>
+        <p class="subtitle">
+          Stand up the BEAM backend for <code>grrr</code> using the official <a href="https://github.com/glimr-org/glimr" target="_blank" rel="noopener noreferrer">Glimr</a> starter template, link your <code>shared/</code> domain package as a local path dependency, and serve your first live JSON endpoint.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge glimr">■ Glimr (≈ Laravel)</span>
+          <span class="domain-badge gleam">◇ shared/ Path Dep</span>
+          <span class="domain-badge beam">● Mist on BEAM</span>
+          <span class="domain-badge ok">✓ /api/health JSON</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Worktree:</strong> <code>lesson-0003/</code></span>
+          <span><strong>Win:</strong> <code>GET /api/health</code> returns JSON from <code>shared/</code></span>
+        </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D Glimr server constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">Glimr</div>
+            <div class="prism-face f2">@get</div>
+            <div class="prism-face f3">Loom</div>
+            <div class="prism-face f4">Mist</div>
+            <div class="prism-face f5">JSON</div>
+            <div class="prism-face f6">shared</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: INTERACTIVE LARAVEL -> GLIMR DIRECTORY EXPLORER -->
+    <section id="sec-anatomy" class="reveal">
+      <h2>1. Glimr Project Anatomy (Interactive Laravel Translator)</h2>
+      <p>
+        If you know Laravel's folder layout, Glimr will feel immediately familiar — with one key upgrade: <strong>routes and Loom templates compile into type-checked Gleam modules</strong> inside <code>src/compiled/</code> before the server ever boots. Click any path below to inspect it.
+      </p>
+
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Click a Glimr Path to Map It to Laravel</h3>
+          <span class="domain-badge glimr">server/ (glimr-org/glimr)</span>
+        </div>
+
+        <div class="tree-explorer">
+          <div class="tree-list" role="group" aria-label="Glimr directory tree">
+            <button type="button" class="tree-item" data-tree="controllers" aria-pressed="true">
+              <span>src/app/http/controllers/</span>
+              <span class="tree-tag">≈ Controllers + routes/</span>
+            </button>
+            <button type="button" class="tree-item" data-tree="kernel" aria-pressed="false">
+              <span>src/app/http/kernel.gleam</span>
+              <span class="tree-tag">≈ Http/Kernel.php</span>
+            </button>
+            <button type="button" class="tree-item" data-tree="views" aria-pressed="false">
+              <span>src/resources/views/*.loom.html</span>
+              <span class="tree-tag">≈ resources/views/*.blade.php</span>
+            </button>
+            <button type="button" class="tree-item" data-tree="compiled" aria-pressed="false">
+              <span>src/compiled/</span>
+              <span class="tree-tag">Compile-time codegen</span>
+            </button>
+            <button type="button" class="tree-item" data-tree="database" aria-pressed="false">
+              <span>src/database/main/</span>
+              <span class="tree-tag">≈ database/migrations + Models</span>
+            </button>
+            <button type="button" class="tree-item" data-tree="cli" aria-pressed="false">
+              <span>./glimr (CLI runner)</span>
+              <span class="tree-tag">≈ php artisan</span>
+            </button>
+          </div>
+
+          <div class="tree-detail" id="tree-detail" aria-live="polite">
+            <h4>src/app/http/controllers/</h4>
+            <p><strong>Laravel equivalent:</strong> <code>app/Http/Controllers/</code> + <code>routes/web.php</code> &amp; <code>routes/api.php</code>.</p>
+            <p><strong>Glimr upgrade:</strong> Routes live right above each handler as doc-comment annotations (<code>/// @get "/api/health"</code>). Handlers inside <code>controllers/api/</code> compile into the <code>api</code> route group, while top-level controllers compile into <code>web</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANIMATED REQUEST LIFECYCLE SVG -->
+      <figure class="diagram">
+        <svg viewBox="0 0 860 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Glimr HTTP request lifecycle">
+          <defs>
+            <marker id="arr-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--glimr)"/>
+            </marker>
+            <marker id="arr-sh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--gleam)"/>
+            </marker>
+          </defs>
+
+          <!-- Mist -->
+          <rect x="14" y="42" width="132" height="74" rx="10" fill="var(--beam-tint)" stroke="var(--beam)" stroke-width="2"/>
+          <text x="80" y="72" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--beam-ink)">Mist (BEAM)</text>
+          <text x="80" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">1 process / req</text>
+
+          <line class="flow-line" x1="146" y1="79" x2="188" y2="79" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-req)"/>
+
+          <!-- Kernel -->
+          <rect x="190" y="42" width="142" height="74" rx="10" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="261" y="72" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--glimr-ink)">kernel.gleam</text>
+          <text x="261" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">web / api middleware</text>
+
+          <line class="flow-line" x1="332" y1="79" x2="374" y2="79" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-req)"/>
+
+          <!-- Compiled Router -->
+          <rect x="376" y="42" width="150" height="74" rx="10" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="451" y="72" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--glimr-ink)">compiled/routes</text>
+          <text x="451" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">pattern-match case</text>
+
+          <line class="flow-line" x1="526" y1="79" x2="568" y2="79" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-req)"/>
+
+          <!-- Controller -->
+          <rect x="570" y="42" width="136" height="74" rx="10" fill="var(--mantle)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="638" y="72" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--gleam-ink)">Controller</text>
+          <text x="638" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">@get "/api/health"</text>
+
+          <line class="flow-line" x1="706" y1="79" x2="742" y2="79" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-req)"/>
+
+          <!-- Response -->
+          <rect x="744" y="42" width="102" height="74" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="795" y="72" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--ok-ink)">200 JSON</text>
+          <text x="795" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">response.json</text>
+
+          <!-- shared/ pill underneath Controller -->
+          <path class="flow-line" d="M 638 116 L 638 142" stroke="var(--gleam)" stroke-width="2" fill="none" marker-end="url(#arr-sh)"/>
+          <rect x="518" y="144" width="240" height="34" rx="8" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="1.6"/>
+          <text x="638" y="165" text-anchor="middle" font-family="monospace" font-size="11" font-weight="800" fill="var(--gleam-ink)">shared/ → grrr/post &amp; grrr/handle</text>
+        </svg>
+        <figcaption>
+          <strong>Figure 1:</strong> Every HTTP request runs inside its own BEAM process via Mist, passes through Glimr's <code>kernel.gleam</code> middleware, hits a compiled pattern-matched router, and calls your <code>shared/</code> domain types directly.
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- SECTION 2: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>2. Hands-On Lab (10 minutes)</h2>
+      <p>Run all commands from the root of your <code>lesson-0003/</code> worktree.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Clone the Glimr starter template into <code>server/</code></strong><br>
+          Remove <code>server/.git</code> right away so <code>server/</code> is tracked cleanly inside your <code>lesson-0003</code> worktree (not a nested repo):
+<pre><code># From the lesson-0003/ worktree root
+git clone --depth 1 https://github.com/glimr-org/glimr.git server
+\rm -rf server/.git
+cd server
+/bin/cp .env.example .env
+gleam deps download</code></pre>
+        </li>
+
+        <li>
+          <strong>Wire <code>shared/</code> as a local path dependency in <code>server/gleam.toml</code></strong><br>
+          Open <code>server/gleam.toml</code> and add one line under <code>[dependencies]</code>:
+<pre><code>[dependencies]
+shared = { path = "../shared" }</code></pre>
+          That's it! Gleam resolves local path dependencies directly — no publishing, no npm workspaces, zero sync step.
+        </li>
+
+        <li>
+          <strong>Create your first <code>grrr</code> JSON endpoint using <code>shared/</code></strong><br>
+          Create <code>server/src/app/http/controllers/api/health_controller.gleam</code>:
+<pre><code>import gleam/json
+import glimr/http/response.{type Response}
+import grrr/handle
+import grrr/post
+
+/// Health &amp; shared-domain smoke endpoint for grrr.
+///
+/// @get "/api/health"
+///
+pub fn show() -&gt; Response {
+  let assert Ok(draft) =
+    post.new_draft("@grrr_bot", "Glimr + shared/ is alive on BEAM! 🐻")
+
+  json.object([
+    #("status", json.string("ok")),
+    #("sample_author", json.string(handle.to_string(draft.author))),
+    #("sample_body", json.string(post.to_string(draft.body))),
+    #("max_body_length", json.int(post.max_body_length)),
+  ])
+  |&gt; response.json(200)
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Boot Glimr and test both the Loom welcome page and <code>/api/health</code></strong>
+<pre><code># Inside lesson-0003/server/
+./glimr run</code></pre>
+          In a second terminal tab, hit your new API endpoint:
+<pre><code>curl -s http://localhost:8000/api/health | jq .</code></pre>
+          Also visit <a href="http://localhost:8000" target="_blank" rel="noopener noreferrer">http://localhost:8000</a> in your browser to see Glimr's default Loom welcome page!
+        </li>
+      </ol>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0003 Win Condition</p>
+        <p>
+          Glimr is running on <code>localhost:8000</code>, <code>GET /api/health</code> returns JSON constructed from your unforgeable <code>shared/</code> types (<code>Handle</code> + <code>GrrrBody</code>), and <code>./scripts/verify-lesson.sh</code> passes from the <code>lesson-0003/</code> worktree root. Next in <strong>Lesson 0004</strong>: SQLite database schema, automatic migrations, and persisting real Grrrs!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
+      <h2>3. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">How does Glimr register a controller route?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr generates compile-time Gleam pattern matches instead of maintaining a runtime route array.">In a runtime PHP-style routes array.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Doc-comment annotations like `/// @get &quot;/api/health&quot;` compile into pattern-matched Gleam routers in `src/compiled/routes/`.">Via doc-comment annotations compiled to cases.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Routes are purely static compile-time code, never queried from a database.">By scanning database tables on boot.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Gleam avoids runtime reflection; Glimr compiles routes ahead of time.">Using dynamic reflection over module names.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">How do you link local <code>shared/</code> inside <code>server/gleam.toml</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Never copy build artifacts by hand; Gleam's build tool resolves local packages natively.">Copy compiled BEAM files into priv.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Local monorepo packages do not need to be published to Hex.">Publish shared to Hex every edit.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Exactly! Adding `shared = { path = &quot;../shared&quot; }` under `[dependencies]` compiles and typechecks both packages together.">Declare a local path dependency entry.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Symlinking into `build/` breaks `gleam clean`; use a `gleam.toml` path dependency instead.">Symlink src folders inside Gleam build.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why run <code>./glimr run</code> instead of plain <code>gleam run</code> during development?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! `./glimr run` watches files, recompiles routes/Loom templates, runs build hooks, and hot-reloads.">It enables hot reload and codegen.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`gleam run` can start Mist fine, it just lacks hot reloading and Glimr's build hooks.">Plain gleam run cannot start Mist.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="The Gleam compiler always typechecks every module regardless of how you start the app.">Plain gleam run skips typechecking routes.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Glimr compiles to Erlang/BEAM bytecode, never PHP.">It compiles Gleam directly to PHP.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">What lives inside Glimr's <code>src/compiled/</code> directory?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Database migrations live under `src/database/main/_migrations/`, not `src/compiled/`.">Hand-written SQLite migrations and local seed scripts.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Lustre SPA bundles will live in `client/` and Vite outputs into `priv/static/`.">Compiled JavaScript bundles emitted by Lustre SPA.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Secrets live in gitignored `.env` files, never inside `src/compiled/`.">Secret API keys loaded from .env files.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Spot on! Glimr generates type-checked Gleam modules for your annotated routes and `.loom.html` views in `src/compiled/`.">Generated Gleam modules for routes and Loom.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">What is Glimr's <code>src/app/http/kernel.gleam</code> equivalent to in Laravel?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Database models and migrations live under `src/database/main/`.">Eloquent database model and migration definitions.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! `kernel.gleam` configures middleware groups (`web`, `api`, custom) just like Laravel's `Http/Kernel.php`.">HTTP middleware groups for web/api pipelines.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Templates and slots live in `src/resources/views/*.loom.html`.">Blade template slot and layout inheritance.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Console commands live under `src/app/console/commands/`.">Artisan scheduled cron job queue workers.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Which directory holds Glimr's <code>.loom.html</code> templates?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="`config/` holds TOML configuration files, not HTML templates.">Inside server/config/views/ as TOML files.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`priv/static/` holds built Vite static assets (CSS/JS/images), not Loom templates.">Inside server/priv/static/ as raw HTML.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Loom templates live in `server/src/resources/views/` (and components in `views/components/`).">Inside server/src/resources/views/ as Loom files.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="`shared/` holds pure dual-target domain modules, not server-side Loom views.">Inside shared/src/grrr/ as opaque types.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why remove <code>server/.git</code> after cloning <code>glimr-org/glimr</code> into <code>lesson-0003/server</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Right! Leaving a nested `.git` turns `server/` into an accidental embedded gitlink instead of normal files in your `grrr` worktree.">Avoid nested repos inside our worktree.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr boots fine in any git repo; removing `server/.git` is purely for monorepo cleanliness.">Glimr refuses to boot with git.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Gleam resolves dependencies from `gleam.toml` regardless of `.git` folders.">Gleam ignores dependencies inside git repos.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Worktrunk does not delete nested folders; nested `.git` simply confuses parent repo tracking.">Worktrunk deletes folders containing dot-git files.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">Which Glimr helper sends a <code>gleam/json</code> value with HTTP status 200?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="`response.html` sets an HTML content type, not `application/json`.">Pipe json into response.html(200) helper.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr controllers use `glimr/http/response` rather than coupling directly to `wisp`.">Pipe json into wisp.json_body(200) helper.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Loom renders server HTML templates, not JSON API responses.">Pipe json into loom.render(200) helper.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! `json.object([...]) |> response.json(200)` from `glimr/http/response` serializes and sets the JSON content type cleanly.">Pipe json into response.json(200) helper.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score>Answered 0 / 4 · Correct 0 / 4</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset &amp; Shuffle</button>
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <div class="footer-grid">
+        <div class="footer-box">
+          <h3>Primary Source Reading</h3>
+          <p>
+            Skim <a href="https://github.com/glimr-org/glimr#routes" target="_blank" rel="noopener noreferrer">Glimr Starter README: Routes &amp; Controllers</a> and <a href="https://glimr.build/" target="_blank" rel="noopener noreferrer">glimr.build</a>.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Community &amp; Wisdom</h3>
+          <p>
+            Check the <a href="https://discord.gg/Fm8aMwZ" target="_blank" rel="noopener noreferrer">Gleam Discord Server</a> (<code>#web</code>) and <a href="https://www.reddit.com/r/gleam/" target="_blank" rel="noopener noreferrer">r/gleam</a> for Glimr tips and production reports.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Ask Your Teacher</h3>
+          <p>
+            Hit a port conflict, curious how Glimr compiles <code>/// @get</code> annotations, or got <code>/api/health</code> returning live JSON? Ping me in chat!
+          </p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'glimr/http',  sub: 'response.json(200)',   ring: 0, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',     snd: 'glimr' },
+        { label: '/// @get',    sub: 'Compiled routes',      ring: 0, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-anatomy', snd: 'gleam' },
+        { label: 'shared/',     sub: 'path = "../shared"',   ring: 0, idx: 2, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab',     snd: 'gleam' },
+        { label: 'Mist BEAM',   sub: '1 process / req',      ring: 0, idx: 3, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-anatomy', snd: 'beam' },
+        { label: 'kernel.gleam',sub: 'web & api stacks',     ring: 1, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-anatomy', snd: 'glimr' },
+        { label: 'Loom Views',  sub: '.loom.html typed',     ring: 1, idx: 1, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-anatomy', snd: 'lustre' },
+        { label: './glimr run', sub: 'Hot reload + hooks',   ring: 1, idx: 2, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab',     snd: 'pass' },
+        { label: '/api/health', sub: 'Live JSON smoke',      ring: 1, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab',     snd: 'pass' }
+      ]);
+    }
+
+    const TREE_INFO = {
+      controllers: {
+        title: 'src/app/http/controllers/',
+        laravel: '<code>app/Http/Controllers/</code> + <code>routes/web.php</code> &amp; <code>routes/api.php</code>.',
+        upgrade: 'Routes live right above each handler as doc-comment annotations (<code>/// @get "/api/health"</code>). Handlers under <code>controllers/api/</code> compile into the <code>api</code> route group; top-level controllers compile into <code>web</code>.'
+      },
+      kernel: {
+        title: 'src/app/http/kernel.gleam',
+        laravel: '<code>app/Http/Kernel.php</code> (or Laravel 11+ <code>bootstrap/app.php</code> middleware config).',
+        upgrade: 'Composable middleware pipelines written as plain typed Gleam functions using <code>use</code> — zero hidden service container magic.'
+      },
+      views: {
+        title: 'src/resources/views/*.loom.html',
+        laravel: '<code>resources/views/*.blade.php</code> (and Livewire components).',
+        upgrade: 'Blade-inspired syntax with components and slots, compiled ahead of time into type-checked Gleam modules in <code>src/compiled/loom/</code>.'
+      },
+      compiled: {
+        title: 'src/compiled/',
+        laravel: 'No direct Laravel equivalent (closest is <code>route:cache</code> + compiled Blade views in <code>storage/framework/views/</code>).',
+        upgrade: 'Glimr generates real Gleam source files for your routes and Loom templates so the Gleam compiler checks every route param and template variable before boot.'
+      },
+      database: {
+        title: 'src/database/main/',
+        laravel: '<code>database/migrations/</code> + <code>app/Models/</code>.',
+        upgrade: 'Schema-based automatic migration generation with snapshot diffing, plus raw <code>.sql</code> files compiled into typed Gleam query functions (Lesson 0004).'
+      },
+      cli: {
+        title: './glimr (CLI runner)',
+        laravel: '<code>php artisan</code> (<code>serve</code>, <code>migrate</code>, <code>make:*</code>).',
+        upgrade: 'Runs <code>./glimr run</code> with hot-reloading, Vite dev server integration, route/Loom compilation hooks, and custom Gleam console commands.'
+      }
+    };
+
+    const detail = document.getElementById('tree-detail');
+    document.querySelectorAll('[data-tree]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const info = TREE_INFO[btn.dataset.tree];
+        document.querySelectorAll('[data-tree]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        detail.innerHTML = `
+          <h4>${info.title}</h4>
+          <p><strong>Laravel equivalent:</strong> ${info.laravel}</p>
+          <p><strong>Glimr upgrade:</strong> ${info.upgrade}</p>
+        `;
+        if (window.GrrrSFX) window.GrrrSFX.click();
+      });
+    });
+  });
+  </script>
+</body>
+</html>
