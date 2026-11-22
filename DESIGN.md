@@ -185,7 +185,7 @@ All reusable course components live in `assets/` (`lesson.css`, `ui.js`, `quiz.j
 - **3D Domain Tilt Cards (`.tilt-card`):** Accent-bordered cards with spinning SVG emblem rings (`.spin-ring`), specular sheen, and domain-specific Web Audio chimes (`gleam`, `glimr`, `lustre`, `beam`).
 - **Interactive SVG Simulators (`.instrument`):** Combines preset pills, live text/control input, an animated glowing SVG packet canvas (`feGaussianBlur` filter + `requestAnimationFrame` easing), 4-column telemetry metrics, and a live `aria-live="polite"` result banner (`is-ok` / `is-err`).
 - **Hands-On Lab Steps (`.steps`) & Code Blocks (`pre`):** Numbered glowing step badges paired with auto-injected one-click `.copy-btn` controls.
-- **Retrieval Quiz (`.quiz-card`):** Equal-length option buttons with immediate feedback, mastery bar sync, and synthesized `pass` / `fail` / `win` Web Audio cues.
+- **Retrieval Quiz (`.quiz-pool` / `.quiz-card`):** Randomized subset of `3–7` questions drawn from a `7–13` question pool on every page load and Reset Quiz click (with shuffled equal-word-count options), immediate feedback, mastery bar sync, and synthesized `pass` / `fail` / `win` Web Audio cues.
 - **Web Audio Synth (`window.GrrrSFX`):** Pure zero-dependency Web Audio API engine (lazy `AudioContext` created only after user gesture; muteable anytime).
 
 ## Do's and Don'ts

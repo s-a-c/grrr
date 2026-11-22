@@ -378,6 +378,15 @@
       });
       pre.appendChild(btn);
     });
+
+    $$('a[href^="http://"], a[href^="https://"]').forEach((a) => {
+      if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
+      const rel = new Set((a.getAttribute('rel') || '').split(/\s+/).filter(Boolean));
+      rel.add('noopener');
+      rel.add('noreferrer');
+      a.setAttribute('rel', Array.from(rel).join(' '));
+      a.classList.add('ext-link');
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {

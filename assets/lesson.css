@@ -449,6 +449,16 @@ a {
 a:hover {
   color: var(--glimr);
 }
+a.ext-link::after {
+  content: " ↗";
+  font-size: 0.78em;
+  opacity: 0.82;
+  display: inline-block;
+  transition: transform var(--dur-micro) var(--ease-out);
+}
+a.ext-link:hover::after {
+  transform: translate(1.5px, -1.5px);
+}
 
 code {
   font-family: var(--font-mono);

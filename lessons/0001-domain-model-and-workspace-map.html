@@ -355,12 +355,12 @@ pub fn publish(body: GrrrBody) -&gt; ...</code></pre>
     <!-- HANDS-ON EXERCISE -->
     <section id="sec-lab" class="reveal">
       <h2>3. Hands-On Lab (8 minutes)</h2>
-      <p>Open your terminal in <code>/Users/s-a-c/antigravity/grrr</code> and build the first real package of <code>grrr</code>.</p>
+      <p>Open your terminal at the root of your <code>lesson-0001/</code> worktree (see <a href="../docs/REPO-MANAGEMENT.md">REPO-MANAGEMENT.md</a>) and build the first real package of <code>grrr</code>.</p>
 
       <ol class="steps">
         <li>
           <strong>Scaffold the <code>shared</code> Gleam package</strong>
-<pre><code>cd /Users/s-a-c/antigravity/grrr
+<pre><code># From the lesson-0001/ worktree root
 gleam new shared
 cd shared
 gleam test</code></pre>
@@ -445,12 +445,12 @@ fn repeat(s: String, times: Int) -&gt; String {
     </section>
 
     <!-- RETRIEVAL QUIZ -->
-    <section id="sec-quiz" class="reveal">
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
       <h2>4. Quick Retrieval Check</h2>
-      <p>Answer from memory before scrolling back — active recall builds long-term storage strength.</p>
+      <p>Answer from memory before scrolling back — each refresh or reset draws a fresh randomized set of 4 questions from an 8-question pool.</p>
 
       <div class="quiz-card" data-answer="b">
-        <p class="quiz-prompt">1. Why mark <code>GrrrBody</code> as <code>pub opaque type</code> instead of <code>pub type</code>?</p>
+        <p class="quiz-prompt">Why mark <code>GrrrBody</code> as <code>pub opaque type</code> instead of <code>pub type</code>?</p>
         <div class="quiz-options">
           <button type="button" class="quiz-option" data-choice="a" data-explain="External modules CAN name an opaque type in type annotations; only its constructor is hidden.">External modules cannot reference the type name anywhere.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="Hiding the constructor forces every caller outside grrr/post to go through new_body.">External modules cannot call its private constructor directly.</button>
@@ -461,7 +461,7 @@ fn repeat(s: String, times: Int) -&gt; String {
       </div>
 
       <div class="quiz-card" data-answer="c">
-        <p class="quiz-prompt">2. In <code>grrr</code>, what is the main advantage of placing <code>GrrrBody</code> inside <code>shared/</code>?</p>
+        <p class="quiz-prompt">In <code>grrr</code>, what is the main advantage of placing <code>GrrrBody</code> inside <code>shared/</code>?</p>
         <div class="quiz-options">
           <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr still owns database schemas and migrations on the server.">It replaces Glimr database migrations with typed code.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="Loom templates render on the server in Glimr; Lustre renders in the browser.">It compiles Loom templates directly into browser apps.</button>
@@ -472,7 +472,7 @@ fn repeat(s: String, times: Int) -&gt; String {
       </div>
 
       <div class="quiz-card" data-answer="a">
-        <p class="quiz-prompt">3. Why does <code>new_body</code> return <code>Result(GrrrBody, BodyError)</code> instead of throwing an exception?</p>
+        <p class="quiz-prompt">Why does <code>new_body</code> return <code>Result(GrrrBody, BodyError)</code> instead of throwing an exception?</p>
         <div class="quiz-options">
           <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam has no exceptions for control flow; Result makes failure part of the function's type signature.">Callers must handle errors at compile time.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="Gleam does not use try/catch exceptions for validation; it models errors explicitly with Result.">Gleam catches thrown errors in Wisp routes.</button>
@@ -482,9 +482,64 @@ fn repeat(s: String, times: Int) -&gt; String {
         <div class="quiz-feedback" aria-live="polite"></div>
       </div>
 
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">How does <code>gleam/string.length("🐻")</code> count characters across BEAM and JavaScript?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="PHP strlen() counts UTF-8 bytes (4 for 🐻), whereas Gleam string.length counts graphemes (1).">It counts raw UTF-8 byte sequences.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Exactly! gleam/string.length counts full Unicode grapheme clusters identically on BEAM and JS.">It counts full Unicode grapheme clusters.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="JavaScript str.length counts UTF-16 code units (2 for 🐻), not Gleam's string.length.">It counts JS UTF-16 code units.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Gleam uses full Unicode grapheme segmentation, not a special ASCII-plus-emoji heuristic.">It counts ASCII characters plus emojis.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">Which <code>grrr</code> layer replaces Laravel Reverb and Redis for single-node live presence?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Loom handles server-rendered HTML templates for the admin portal, not live actor state.">Loom templates compiled inside Glimr controllers.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="localStorage is per-browser only and cannot broadcast presence across connected users.">Lustre browser state stored in localStorage.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="shared/ defines pure domain types and validation, not stateful pub/sub processes.">Shared opaque types compiled to JavaScript.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! Supervised BEAM/OTP actors (gleam_otp) hold live PubSub and presence state natively inside the VM.">BEAM OTP actors running inside the VM.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">What happens when a Loom template references a missing or mistyped variable?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Loom templates compile down to type-checked Gleam code, catching template bugs at compile time.">The Gleam compiler rejects it before runtime.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Unlike untyped template engines, Loom does not silently render blank strings for missing fields.">Loom renders an empty string in HTML.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Missing variables are caught during compilation, never as runtime view exceptions.">Wisp throws an uncaught runtime view exception.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Loom is server-rendered on the BEAM; Lustre does not patch missing Loom variables.">Lustre patches the missing field on hydration.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Why does <code>post.new_body</code> call <code>string.trim</code> before checking <code>string.length</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam strings can hold any valid UTF-8 whitespace; trimming is a domain normalization rule.">Gleam strings cannot hold leading space bytes.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="BEAM message passing preserves strings verbatim without modifying whitespace.">BEAM processes strip trailing spaces on send.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! Trimming first ensures whitespace-only posts return Error(Empty) and padding does not inflate length.">Whitespace padding cannot spoof valid post length.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="SQLite stores tabs and spaces normally; trimming is a domain rule, not a DB limitation.">SQLite rejects strings starting with tab characters.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">How does <code>grrr</code> split responsibilities between Glimr and Lustre?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="It is the reverse: Glimr runs on the BEAM server, and Lustre powers the browser SPA.">Lustre renders admin pages; Glimr runs browsers.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Glimr serves the Loom admin portal + JSON API, while Lustre powers the user-facing SPA.">Glimr serves API/admin; Lustre powers user SPA.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Glimr owns migrations and HTTP routes, not CSS; Lustre is a frontend framework, not a DB tool.">Glimr handles CSS; Lustre manages Postgres migrations.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Glimr compiles to Erlang/BEAM on the server; Lustre compiles to JS for the browser SPA.">Both frameworks compile exclusively to browser bundles.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
       <div class="quiz-summary">
-        <span data-quiz-score>Answered 0 / 3 · Correct 0 / 3</span>
-        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset Quiz</button>
+        <span data-quiz-score>Answered 0 / 4 · Correct 0 / 4</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset &amp; Shuffle</button>
       </div>
     </section>
 

@@ -385,10 +385,14 @@ pub fn over_280_graphemes_returns_too_long_test() {
 
         <li>
           <strong>Prove Dual-Target Compilation (BEAM + JavaScript!)</strong>
-<pre><code>cd /Users/s-a-c/antigravity/grrr/shared
+<pre><code># From the lesson-0002/ worktree root
+cd shared
 gleam test
 gleam test --target javascript
-gleam format --check src test</code></pre>
+gleam format --check src test
+
+# Or run the worktree verification gate from the worktree root:
+cd .. &amp;&amp; ./scripts/verify-lesson.sh</code></pre>
           Watch the <em>exact same</em> domain package compile and pass on Erlang OTP 29 <strong>and</strong> Node.js!
         </li>
       </ol>
@@ -402,12 +406,12 @@ gleam format --check src test</code></pre>
     </section>
 
     <!-- SECTION 4: RETRIEVAL QUIZ -->
-    <section id="sec-quiz" class="reveal">
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
       <h2>4. Quick Retrieval Check</h2>
-      <p>Answer from memory first — effortful recall locks in storage strength.</p>
+      <p>Answer from memory first — each refresh or reset draws a fresh randomized set of 4 questions from an 8-question pool.</p>
 
       <div class="quiz-card" data-answer="c">
-        <p class="quiz-prompt">1. What does Gleam's <code>use x &lt;- f(arg)</code> syntax actually compile into?</p>
+        <p class="quiz-prompt">What does Gleam's <code>use x &lt;- f(arg)</code> syntax actually compile into?</p>
         <div class="quiz-options">
           <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam has no try/catch exception syntax; use is purely a callback rewrite.">A runtime exception handler wrapping the entire module.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="use does not spawn processes; it works identically on both BEAM and single-threaded JavaScript.">A background BEAM process spawned for each statement.</button>
@@ -418,7 +422,7 @@ gleam format --check src test</code></pre>
       </div>
 
       <div class="quiz-card" data-answer="a">
-        <p class="quiz-prompt">2. Why do we pipe into <code>result.map_error</code> before passing to <code>result.try</code>?</p>
+        <p class="quiz-prompt">Why do we pipe into <code>result.map_error</code> before passing to <code>result.try</code>?</p>
         <div class="quiz-options">
           <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! `result.try` requires the chained Result to share the same error type `e` as the outer return type (`DraftError`).">Every chained step needs one error type.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="We keep rich custom types (`InvalidHandle`, `InvalidBody`) rather than flattening to strings.">Gleam turns every error into plain text.</button>
@@ -429,7 +433,7 @@ gleam format --check src test</code></pre>
       </div>
 
       <div class="quiz-card" data-answer="d">
-        <p class="quiz-prompt">3. What happens in <code>new_draft</code> if <code>handle.new</code> returns <code>Error(TooShort)</code>?</p>
+        <p class="quiz-prompt">What happens in <code>new_draft</code> if <code>handle.new</code> returns <code>Error(TooShort)</code>?</p>
         <div class="quiz-options">
           <button type="button" class="quiz-option" data-choice="a" data-explain="No fallback is invented; the failure propagates explicitly as `Error(InvalidHandle(TooShort(...)))`.">It substitutes a default anonymous guest handle.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="Gleam returns the `Error` value directly without raising exceptions.">It raises a runtime exception inside Glimr.</button>
@@ -439,9 +443,64 @@ gleam format --check src test</code></pre>
         <div class="quiz-feedback" aria-live="polite"></div>
       </div>
 
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Why does <code>handle.new</code> normalize input with <code>strip_leading_at</code> and <code>string.lowercase</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam opaque types can wrap any String; lowercasing is a domain uniqueness rule.">Gleam opaque types forbid uppercase ASCII letters.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Normalizing `@Bear_Dev` and `bear_dev` to one canonical form prevents duplicate accounts and lookup mismatches.">One canonical form prevents duplicate handle bugs.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Handles are stored as Gleam UTF-8 strings, not Erlang atoms.">BEAM atoms crash when containing leading symbols.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="JSON decoding preserves string casing faithfully on both targets.">JavaScript strings lose casing during JSON decoding.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Which command runs your <code>shared/</code> test suite on Node.js?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="The Gleam CLI uses `gleam test --target javascript` rather than a `--node` flag.">Run gleam build --node test.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`gleam check` only typechecks; it does not execute test suites.">Run gleam check --target browser.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! `gleam test --target javascript` compiles to JS and runs gleeunit on Node/Deno/Bun.">Run gleam test --target javascript.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="There is no `gleam verify` subcommand; `gleam test --target javascript` runs JS tests.">Run gleam verify --runtime node.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why is mastering <code>use</code> essential before starting Glimr in Lesson 0003?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Yes! Wisp (under Glimr) uses `use req <- ...` for middleware, body parsing, and auth guards everywhere.">Glimr and Wisp middleware rely on use.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr routes use `case` extensively for pattern-matching paths and HTTP methods.">Glimr routes forbid case inside HTTP handlers.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Loom templates take ordinary typed Gleam arguments from controllers.">Loom templates only accept variables from use.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="OTP supervisors start actors via normal function calls, not a special `use` requirement.">BEAM supervisors only start actors via use.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">What syntax feature does <code>DraftGrrr(author:, body:)</code> use in Gleam?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam records are immutable and have no JavaScript object spread syntax.">A mutable object spread from JavaScript syntax.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Gleam has no macros; label shorthand is a built-in language feature.">A macro that generates Eloquent model setters.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Label shorthand is resolved statically at compile time with zero runtime reflection.">A runtime reflection lookup on field names.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! `author:` is compile-time label shorthand for `author: author`.">Label shorthand matching local variables to fields.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Why test <code>string.repeat("🐻", 280)</code> in <code>grrr_draft_test.gleam</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="If Gleam counted UTF-8 bytes, 280 emojis would be 1,120 bytes and fail `TooLong`.">It proves Gleam counts emojis as bytes.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Spot on! It verifies both the inclusive `<= 280` upper bound and Unicode grapheme counting on BEAM and JS.">It locks in the inclusive 280-grapheme boundary.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Both BEAM and JavaScript accept 280 emojis because `gleam/string.length` counts graphemes.">It verifies JavaScript rejects 280 emoji characters.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="This is a pure `shared/` unit test with no SQLite database involved.">It checks that SQLite compresses emoji strings.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
       <div class="quiz-summary">
-        <span data-quiz-score>Answered 0 / 3 · Correct 0 / 3</span>
-        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset Quiz</button>
+        <span data-quiz-score>Answered 0 / 4 · Correct 0 / 4</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset &amp; Shuffle</button>
       </div>
     </section>
 
