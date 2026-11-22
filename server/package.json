@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun --bun vite build",
+    "deps:minor": "bunx sort-package-json && bunx npm-check-updates -u --target minor && bun update",
+    "deps:refresh": "bunx sort-package-json && bunx npm-check-updates -u && bun update",
+    "dev": "bun --bun vite"
+  },
+  "dependencies": {
+    "@glimr/loom": "^1.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vite-plugin-gleam": "^0.2.3"
+  }
+}

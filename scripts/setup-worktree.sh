@@ -22,10 +22,20 @@ for pkg in shared server client; do
   fi
 done
 
-# 3. Install JS dependencies if client/ uses pnpm
-if [[ -f "$ROOT/client/package.json" ]] && command -v pnpm >/dev/null 2>&1; then
-  echo "  + pnpm install (client)"
-  (cd "$ROOT/client" && pnpm install --frozen-lockfile || pnpm install)
-fi
+# 3. Install JS dependencies for server/ and client/ (prefers Bun, falls back to pnpm/npm)
+for pkg in server client; do
+  if [[ -f "$ROOT/$pkg/package.json" ]]; then
+    if command -v bun >/dev/null 2>&1; then
+      echo "  + bun install ($pkg)"
+      (cd "$ROOT/$pkg" && (bun install --frozen-lockfile || bun install))
+    elif command -v pnpm >/dev/null 2>&1; then
+      echo "  + pnpm install ($pkg)"
+      (cd "$ROOT/$pkg" && (pnpm install --frozen-lockfile || pnpm install))
+    elif command -v npm >/dev/null 2>&1; then
+      echo "  + npm install ($pkg)"
+      (cd "$ROOT/$pkg" && npm install)
+    fi
+  fi
+done
 
 echo "==> Worktree ready: $ROOT"

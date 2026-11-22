@@ -11,9 +11,12 @@ if [[ -f "$ROOT/shared/gleam.toml" ]]; then
   (cd "$ROOT/shared" && gleam format --check src test)
   echo "  + shared: gleam test (BEAM)"
   (cd "$ROOT/shared" && gleam test)
-  if command -v node >/dev/null 2>&1; then
-    echo "  + shared: gleam test --target javascript"
-    (cd "$ROOT/shared" && gleam test --target javascript)
+  if command -v bun >/dev/null 2>&1; then
+    echo "  + shared: gleam test --target javascript --runtime bun"
+    (cd "$ROOT/shared" && gleam test --target javascript --runtime bun)
+  elif command -v node >/dev/null 2>&1; then
+    echo "  + shared: gleam test --target javascript --runtime node"
+    (cd "$ROOT/shared" && gleam test --target javascript --runtime node)
   fi
 fi
 

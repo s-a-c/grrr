@@ -18,7 +18,7 @@
   - Admin portal: Glimr + Loom (with optional Lustre islands)
   - User app: Glimr JSON API + Lustre SPA
   - Live features: live timeline updates + online presence (BEAM/OTP)
-- **Local toolchain:** Verified `gleam 1.19.2` and Erlang `OTP 29` on macOS.
+- **Local toolchain:** Verified `gleam 1.19.2`, Erlang `OTP 29`, and `bun` (preferred JS runtime & package manager over Node/npm; `[javascript] runtime = "bun"` in `gleam.toml`, `bun --bun vite` + `deps:refresh` in `package.json`).
 
 - **Git & Worktree Workflow (authorized by user):**
   - Bare repo at `grrr/.bare` + 1-line `grrr/.git` redirect (`gitdir: ./.bare`) + sibling worktrees (`main/`, `lesson-0001/`, `lesson-0002/`, ...).
