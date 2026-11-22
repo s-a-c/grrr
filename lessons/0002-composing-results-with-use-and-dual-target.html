@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0002: Composing Results with `use` &amp; Proving Dual-Target (BEAM + JS)</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0002</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html">Lesson 0001</a>
+        <a href="./0002-composing-results-with-use-and-dual-target.html" aria-current="page">Lesson 0002</a>
+        <a href="../reference/glossary.html">Glossary</a>
+        <a href="../MISSION.md">Mission</a>
+        <a href="../RESOURCES.md">Resources</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/3</span>
+      </div>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0002 · Railway Composition &amp; Dual-Target Proof</p>
+        <h1>Composing <code>Result</code>s with <code>use</code> &amp; Dual-Target Tests</h1>
+        <p class="subtitle">
+          Master Gleam's single most important control-flow idiom — the <code>use</code> expression — to chain multiple domain validations without nested pyramids, and prove your <code>shared/</code> package passes on both BEAM and JavaScript.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge gleam">◇ use &lt;- result.try</span>
+          <span class="domain-badge glimr">■ Glimr/Wisp Idiom</span>
+          <span class="domain-badge lustre">▲ JS Target Verified</span>
+          <span class="domain-badge beam">● BEAM Target Verified</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Builds on:</strong> <a href="./0001-domain-model-and-workspace-map.html">Lesson 0001</a></span>
+          <span><strong>Win:</strong> <code>Handle</code> + <code>DraftGrrr</code> green on BEAM &amp; JS</span>
+        </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D Lesson 0002 constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">use &lt;-</div>
+            <div class="prism-face f2">try</div>
+            <div class="prism-face f3">Handle</div>
+            <div class="prism-face f4">Draft</div>
+            <div class="prism-face f5">BEAM</div>
+            <div class="prism-face f6">NodeJS</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: WHY `use` MATTERS (LARAVEL BRIDGE) -->
+    <section id="sec-why-use" class="reveal">
+      <h2>1. Escaping the Pyramid of Doom: Gleam's <code>use</code></h2>
+      <p>
+        In Lesson 0001 you validated one field (<code>GrrrBody</code>). Real <code>grrr</code> actions validate <em>several</em> things in sequence: an author <code>Handle</code>, a <code>GrrrBody</code>, maybe a reply target ID. Without syntax help, chaining <code>Result</code>s with <code>case</code> indents deeper at every step.
+      </p>
+      <p>
+        Gleam solves this with <a href="https://tour.gleam.run/advanced-features/use/"><code>use</code> expressions</a> — pure syntax sugar that passes the rest of your block as a callback to a higher-order function like <a href="https://hexdocs.pm/gleam_stdlib/gleam/result.html#try"><code>result.try</code></a>. You will also use <code>use</code> in <em>every</em> <strong>Glimr</strong> controller and middleware (Wisp) starting in Lesson 0003!
+      </p>
+
+      <div class="tilt-grid">
+        <article class="tilt-card glimr" data-sound="glimr" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>Laravel Early Return</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--glimr)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <path d="M16 24h16M26 18l6 6-6 6" fill="none" stroke="var(--glimr)" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p>Validate step 1 or throw <code>ValidationException</code>; validate step 2 or throw. Flat to read, but failure types are invisible in signatures.</p>
+        </article>
+
+        <article class="tilt-card gleam" data-sound="gleam" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>Gleam <code>use &lt;- result.try</code></h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--gleam)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <polygon points="24,11 36,24 24,37 12,24" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p>Reads top-to-bottom just like early returns, short-circuits on the first <code>Error</code>, and keeps every failure in the return type.</p>
+        </article>
+
+        <article class="tilt-card lustre" data-sound="lustre" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3><code>result.map_error</code></h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--lustre)" stroke-width="1.5" stroke-dasharray="5 5"/>
+              <circle cx="24" cy="24" r="9" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><code>HandleError</code> and <code>BodyError</code> are different types. Wrap each into a unified <code>DraftError</code> so <code>result.try</code> can chain them.</p>
+        </article>
+      </div>
+
+      <!-- INTERACTIVE DESUGAR TOGGLE -->
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Interactive Comparison: Flat <code>use</code> vs Desugared <code>result.try</code></h3>
+          <div class="seg-group" role="group" aria-label="Code view mode">
+            <button type="button" class="seg-btn" data-code-mode="use" aria-pressed="true">Idiomatic <code>use</code></button>
+            <button type="button" class="seg-btn" data-code-mode="desugared" aria-pressed="false">Desugared Callbacks</button>
+          </div>
+        </div>
+        <pre><code id="desugar-code">pub fn new_draft(raw_author: String, raw_body: String) -&gt; Result(DraftGrrr, DraftError) {
+  use author &lt;- result.try(
+    handle.new(raw_author) |&gt; result.map_error(InvalidHandle),
+  )
+  use body &lt;- result.try(
+    new_body(raw_body) |&gt; result.map_error(InvalidBody),
+  )
+
+  Ok(DraftGrrr(author:, body:))
+}</code></pre>
+        <p id="desugar-note" style="margin-bottom:0;font-size:0.9rem;">
+          <strong>Idiomatic <code>use</code>:</strong> Flat, linear, zero rightward drift. The compiler literally rewrites this into the nested callback version.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: INTERACTIVE RAILWAY SIMULATOR -->
+    <section id="sec-railway" class="reveal">
+      <h2>2. Live Railway Simulator: Watch Short-Circuiting Happen</h2>
+      <p>
+        Test any author handle and post body below. Watch how an <code>Error</code> at Station 1 switches onto the crimson error rail immediately and skips Station 2.
+      </p>
+
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Railway Track: <code>post.new_draft(raw_author, raw_body)</code></h3>
+          <div class="sim-controls">
+            <button type="button" class="ctrl-btn" data-rail-preset="ok">Both Valid</button>
+            <button type="button" class="ctrl-btn" data-rail-preset="bad-handle">Bad Handle</button>
+            <button type="button" class="ctrl-btn" data-rail-preset="bad-body">Bad Body</button>
+          </div>
+        </div>
+
+        <div class="sim-input-row">
+          <input type="text" id="rail-author" class="sim-input" value="@Bear_Dev" aria-label="Raw author handle" placeholder="@handle">
+          <input type="text" id="rail-body" class="sim-input" value="Shipping grrr on BEAM + JS 🐻" aria-label="Raw post body" placeholder="Grrr body">
+          <button type="button" class="btn-primary" id="rail-run">Run Railway</button>
+        </div>
+
+        <svg viewBox="0 0 840 215" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated railway-oriented programming SVG diagram">
+          <defs>
+            <filter id="rail-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Labels -->
+          <text x="20" y="34" font-family="monospace" font-size="11" font-weight="800" fill="var(--ok-ink)">OK RAIL (happy path)</text>
+          <text x="20" y="196" font-family="monospace" font-size="11" font-weight="800" fill="var(--err-ink)">ERROR RAIL (short-circuit)</text>
+
+          <!-- Happy Track -->
+          <line x1="24" y1="68" x2="808" y2="68" stroke="var(--ok)" stroke-width="3" stroke-dasharray="7 5"/>
+          <!-- Error Track -->
+          <line x1="24" y1="162" x2="808" y2="162" stroke="var(--err)" stroke-width="3" stroke-dasharray="7 5"/>
+
+          <!-- Switch diagonals -->
+          <path d="M 270 92 L 335 162" stroke="var(--err)" stroke-width="2.2" fill="none"/>
+          <path d="M 555 92 L 620 162" stroke="var(--err)" stroke-width="2.2" fill="none"/>
+
+          <!-- Station 1 -->
+          <rect x="115" y="42" width="190" height="54" rx="10" fill="var(--mantle)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="210" y="65" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--gleam-ink)">1. handle.new</text>
+          <text x="210" y="83" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">strip @ · lower · 3..15</text>
+
+          <!-- Station 2 -->
+          <rect x="400" y="42" width="190" height="54" rx="10" fill="var(--mantle)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="495" y="65" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--glimr-ink)">2. post.new_body</text>
+          <text x="495" y="83" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">trim · 1..280 graphemes</text>
+
+          <!-- Ok Destination -->
+          <rect x="665" y="42" width="155" height="54" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="742" y="65" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--ok-ink)">Ok(DraftGrrr)</text>
+          <text x="742" y="83" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">Ready to persist</text>
+
+          <!-- Error Destination -->
+          <rect x="665" y="135" width="155" height="54" rx="10" fill="var(--err-tint)" stroke="var(--err)" stroke-width="2"/>
+          <text x="742" y="158" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--err-ink)">Error(DraftError)</text>
+          <text x="742" y="176" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">Short-circuited</text>
+
+          <!-- Glowing Packet -->
+          <circle id="rail-pkt" cx="40" cy="68" r="9.5" fill="var(--ok)" filter="url(#rail-glow)"/>
+        </svg>
+
+        <div class="sim-result-banner is-ok" id="rail-banner" aria-live="polite">
+          Ok(DraftGrrr(author: Handle("@bear_dev"), body: GrrrBody("Shipping grrr on BEAM + JS 🐻")))
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>3. Hands-On Lab (9 minutes)</h2>
+      <p>Add <code>Handle</code> and <code>DraftGrrr</code> inside <code>shared/</code>, then prove your domain core runs on <strong>both</strong> Erlang/BEAM and JavaScript.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Create <code>shared/src/grrr/handle.gleam</code></strong><br>
+          Normalizes optional leading <code>@</code>, lowercases, enforces 3–15 characters in <code>[a-z0-9_]</code>, and seals the constructor with <code>pub opaque type Handle</code>:
+<pre><code>import gleam/list
+import gleam/string
+
+pub opaque type Handle {
+  Handle(String)
+}
+
+pub type HandleError {
+  TooShort(length: Int, min: Int)
+  TooLong(length: Int, max: Int)
+  InvalidChars
+}
+
+pub fn new(raw: String) -&gt; Result(Handle, HandleError) {
+  let cleaned =
+    raw
+    |&gt; string.trim
+    |&gt; strip_leading_at
+    |&gt; string.lowercase
+
+  let len = string.length(cleaned)
+  case len {
+    n if n &lt; 3 -&gt; Error(TooShort(length: n, min: 3))
+    n if n &gt; 15 -&gt; Error(TooLong(length: n, max: 15))
+    _ -&gt;
+      case is_valid_chars(cleaned) {
+        True -&gt; Ok(Handle(cleaned))
+        False -&gt; Error(InvalidChars)
+      }
+  }
+}
+
+pub fn to_string(handle: Handle) -&gt; String {
+  let Handle(name) = handle
+  "@" &lt;&gt; name
+}
+
+fn strip_leading_at(s: String) -&gt; String {
+  case string.starts_with(s, "@") {
+    True -&gt; string.drop_start(s, 1)
+    False -&gt; s
+  }
+}
+
+fn is_valid_chars(s: String) -&gt; Bool {
+  s
+  |&gt; string.to_graphemes
+  |&gt; list.all(fn(ch) {
+    string.contains("abcdefghijklmnopqrstuvwxyz0123456789_", ch)
+  })
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Add <code>DraftGrrr</code> + <code>new_draft</code> to <code>shared/src/grrr/post.gleam</code></strong><br>
+          Add <code>import gleam/result</code> and <code>import grrr/handle.{type Handle, type HandleError}</code> at the top of <code>post.gleam</code>, then append:
+<pre><code>pub type DraftGrrr {
+  DraftGrrr(author: Handle, body: GrrrBody)
+}
+
+pub type DraftError {
+  InvalidHandle(HandleError)
+  InvalidBody(BodyError)
+}
+
+pub fn new_draft(
+  raw_author: String,
+  raw_body: String,
+) -&gt; Result(DraftGrrr, DraftError) {
+  use author &lt;- result.try(
+    handle.new(raw_author) |&gt; result.map_error(InvalidHandle),
+  )
+  use body &lt;- result.try(
+    new_body(raw_body) |&gt; result.map_error(InvalidBody),
+  )
+
+  Ok(DraftGrrr(author:, body:))
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Add tests in <code>shared/test/grrr_draft_test.gleam</code></strong><br>
+          Notice how we use <code>string.repeat</code> from <code>gleam/string</code> instead of a custom helper!
+<pre><code>import gleam/string
+import gleeunit/should
+import grrr/handle
+import grrr/post.{Empty, InvalidBody, InvalidHandle, TooLong}
+
+pub fn valid_draft_normalizes_handle_and_body_test() {
+  let assert Ok(draft) = post.new_draft("  @Bear_Dev ", "  Hello grrr! 🐻 ")
+  handle.to_string(draft.author) |&gt; should.equal("@bear_dev")
+  post.to_string(draft.body) |&gt; should.equal("Hello grrr! 🐻")
+}
+
+pub fn invalid_handle_short_circuits_before_body_test() {
+  // Both handle AND body are invalid — handle error wins first
+  post.new_draft("ab", "")
+  |&gt; should.equal(Error(InvalidHandle(handle.TooShort(length: 2, min: 3))))
+}
+
+pub fn invalid_body_returns_invalid_body_error_test() {
+  post.new_draft("@valid_user", "   ")
+  |&gt; should.equal(Error(InvalidBody(Empty)))
+}
+
+pub fn exact_280_graphemes_is_allowed_test() {
+  let max_emojis = string.repeat("🐻", 280)
+  let assert Ok(draft) = post.new_draft("bear", max_emojis)
+  string.length(post.to_string(draft.body)) |&gt; should.equal(280)
+}
+
+pub fn over_280_graphemes_returns_too_long_test() {
+  let over = string.repeat("a", 281)
+  post.new_draft("bear", over)
+  |&gt; should.equal(Error(InvalidBody(TooLong(length: 281, max: 280))))
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Prove Dual-Target Compilation (BEAM + JavaScript!)</strong>
+<pre><code>cd /Users/s-a-c/antigravity/grrr/shared
+gleam test
+gleam test --target javascript
+gleam format --check src test</code></pre>
+          Watch the <em>exact same</em> domain package compile and pass on Erlang OTP 29 <strong>and</strong> Node.js!
+        </li>
+      </ol>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0002 Win Condition</p>
+        <p>
+          Both <code>gleam test</code> (BEAM) and <code>gleam test --target javascript</code> (JS) are green, and you now have fluent muscle memory for <code>use &lt;- result.try</code>. In <strong>Lesson 0003</strong>, we scaffold <code>server/</code> with <strong>Glimr</strong>, connect <code>shared/</code> as a path dependency, and serve your first Loom page + JSON endpoint!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 4: RETRIEVAL QUIZ -->
+    <section id="sec-quiz" class="reveal">
+      <h2>4. Quick Retrieval Check</h2>
+      <p>Answer from memory first — effortful recall locks in storage strength.</p>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">1. What does Gleam's <code>use x &lt;- f(arg)</code> syntax actually compile into?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam has no try/catch exception syntax; use is purely a callback rewrite.">A runtime exception handler wrapping the entire module.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="use does not spawn processes; it works identically on both BEAM and single-threaded JavaScript.">A background BEAM process spawned for each statement.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Exactly! Every line after `use x <- f(arg)` becomes an anonymous `fn(x) { ... }` callback passed as the final argument to `f`.">A function call passing remaining lines as callback.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="All bindings in Gleam are immutable; `use` introduces a fresh parameter in a callback scope.">A mutable local variable reassigned on every branch.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">2. Why do we pipe into <code>result.map_error</code> before passing to <code>result.try</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! `result.try` requires the chained Result to share the same error type `e` as the outer return type (`DraftError`).">Every chained step needs one error type.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="We keep rich custom types (`InvalidHandle`, `InvalidBody`) rather than flattening to strings.">Gleam turns every error into plain text.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Returning `Error(...)` never crashes a BEAM actor; mapping errors is purely for type alignment.">BEAM actors crash on unmapped error types.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Both BEAM and JS share the exact same Gleam typechecker before codegen.">JS builds fail on unmapped error types.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">3. What happens in <code>new_draft</code> if <code>handle.new</code> returns <code>Error(TooShort)</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="No fallback is invented; the failure propagates explicitly as `Error(InvalidHandle(TooShort(...)))`.">It substitutes a default anonymous guest handle.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Gleam returns the `Error` value directly without raising exceptions.">It raises a runtime exception inside Glimr.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="`result.try` only invokes its callback on `Ok`, so the second step never runs on `Error`.">It still validates the body before returning.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Spot on! `result.try` short-circuits immediately on `Error`, returning `Error(InvalidHandle(TooShort(...)))` without running `new_body`.">It skips body validation and returns Error.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score>Answered 0 / 3 · Correct 0 / 3</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset Quiz</button>
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <div class="footer-grid">
+        <div class="footer-box">
+          <h3>Primary Source Reading</h3>
+          <p>
+            Read the official 3-minute interactive page on
+            <a href="https://tour.gleam.run/advanced-features/use/">Gleam Language Tour: <code>use</code></a>
+            and skim <a href="https://hexdocs.pm/gleam_stdlib/gleam/result.html"><code>gleam/result</code> HexDocs</a>.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Community &amp; Wisdom</h3>
+          <p>
+            Ask in the <a href="https://discord.gg/Fm8aMwZ">Gleam Discord Server</a> (<code>#help</code>) when you want feedback on error-type granularity (when to nest vs flatten domain error unions).
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Ask Your Teacher</h3>
+          <p>
+            Curious how accumulating <em>all</em> form errors at once differs from short-circuiting with <code>result.try</code>, or finished the dual-target lab? Ping me in chat!
+          </p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    /* 1. 3D Orbital Constellation */
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'use <-',      sub: 'Callback sugar',       ring: 0, idx: 0, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-why-use', snd: 'gleam' },
+        { label: 'result.try',  sub: 'Short-circuit Ok',     ring: 0, idx: 1, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-railway', snd: 'pass' },
+        { label: 'map_error',   sub: 'Unify error types',    ring: 0, idx: 2, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-why-use', snd: 'lustre' },
+        { label: 'Handle',      sub: 'pub opaque @name',     ring: 0, idx: 3, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',     snd: 'glimr' },
+        { label: 'DraftGrrr',   sub: 'Composed record',      ring: 1, idx: 0, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab',     snd: 'gleam' },
+        { label: 'BEAM OTP 29', sub: 'gleam test',           ring: 1, idx: 1, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-lab',     snd: 'beam' },
+        { label: 'Node.js JS',  sub: '--target javascript',  ring: 1, idx: 2, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-lab',     snd: 'lustre' },
+        { label: 'Wisp / Glimr',sub: 'Same `use` idiom',     ring: 1, idx: 3, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-why-use', snd: 'glimr' }
+      ]);
+    }
+
+    /* 2. Desugar Toggle */
+    const CODE_VIEWS = {
+      use: {
+        code: `pub fn new_draft(raw_author: String, raw_body: String) -> Result(DraftGrrr, DraftError) {\n  use author <- result.try(\n    handle.new(raw_author) |> result.map_error(InvalidHandle),\n  )\n  use body <- result.try(\n    new_body(raw_body) |> result.map_error(InvalidBody),\n  )\n\n  Ok(DraftGrrr(author:, body:))\n}`,
+        note: '<strong>Idiomatic <code>use</code>:</strong> Flat, linear, zero rightward drift. The compiler literally rewrites this into the nested callback version.'
+      },
+      desugared: {
+        code: `pub fn new_draft(raw_author: String, raw_body: String) -> Result(DraftGrrr, DraftError) {\n  result.try(\n    handle.new(raw_author) |> result.map_error(InvalidHandle),\n    fn(author) {\n      result.try(\n        new_body(raw_body) |> result.map_error(InvalidBody),\n        fn(body) { Ok(DraftGrrr(author:, body:)) },\n      )\n    },\n  )\n}`,
+        note: '<strong>Exact compiler output:</strong> No monad magic, no runtime overhead — just plain anonymous functions passed as the last argument.'
+      }
+    };
+    const codeEl = document.getElementById('desugar-code');
+    const noteEl = document.getElementById('desugar-note');
+    document.querySelectorAll('[data-code-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const m = btn.dataset.codeMode;
+        document.querySelectorAll('[data-code-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        codeEl.textContent = CODE_VIEWS[m].code;
+        noteEl.innerHTML = CODE_VIEWS[m].note;
+        if (window.GrrrSFX) window.GrrrSFX.click();
+      });
+    });
+
+    /* 3. Interactive Railway Simulator */
+    const authorEl = document.getElementById('rail-author');
+    const bodyEl = document.getElementById('rail-body');
+    const pkt = document.getElementById('rail-pkt');
+    const banner = document.getElementById('rail-banner');
+    const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null;
+    const gLen = (s) => seg ? Array.from(seg.segment(s)).length : Array.from(s).length;
+
+    function animateRail(pts, col) {
+      pkt.setAttribute('fill', col);
+      if (!window.GrrrEnv || !window.GrrrEnv.motion) {
+        const last = pts[pts.length - 1];
+        pkt.setAttribute('cx', last[0]); pkt.setAttribute('cy', last[1]);
+        return;
+      }
+      const start = performance.now(), dur = 680;
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const segs = pts.length - 1;
+        const sc = t * segs;
+        const i = Math.min(segs - 1, Math.floor(sc));
+        const lt = sc - i;
+        const ease = 1 - Math.pow(1 - lt, 3);
+        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+        pkt.setAttribute('cx', (x0 + (x1 - x0) * ease).toFixed(1));
+        pkt.setAttribute('cy', (y0 + (y1 - y0) * ease).toFixed(1));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    function runRail() {
+      const sfx = window.GrrrSFX || { pass() {}, fail() {} };
+      let h = authorEl.value.trim();
+      if (h.startsWith('@')) h = h.slice(1);
+      h = h.toLowerCase();
+
+      if (h.length < 3) {
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = `Error(InvalidHandle(TooShort(length: ${h.length}, min: 3)))  // Station 2 skipped!`;
+        animateRail([[40, 68], [210, 68], [270, 92], [335, 162], [742, 162]], 'var(--err)');
+        sfx.fail(); return;
+      }
+      if (h.length > 15) {
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = `Error(InvalidHandle(TooLong(length: ${h.length}, max: 15)))  // Station 2 skipped!`;
+        animateRail([[40, 68], [210, 68], [270, 92], [335, 162], [742, 162]], 'var(--err)');
+        sfx.fail(); return;
+      }
+      if (!/^[a-z0-9_]+$/.test(h)) {
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = 'Error(InvalidHandle(InvalidChars))  // Only [a-z0-9_] allowed · Station 2 skipped!';
+        animateRail([[40, 68], [210, 68], [270, 92], [335, 162], [742, 162]], 'var(--err)');
+        sfx.fail(); return;
+      }
+
+      const b = bodyEl.value.trim();
+      const bl = gLen(b);
+      if (bl === 0) {
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = 'Error(InvalidBody(Empty))  // Passed Station 1, short-circuited at Station 2';
+        animateRail([[40, 68], [210, 68], [495, 68], [555, 92], [620, 162], [742, 162]], 'var(--err)');
+        sfx.fail(); return;
+      }
+      if (bl > 280) {
+        banner.className = 'sim-result-banner is-err';
+        banner.textContent = `Error(InvalidBody(TooLong(length: ${bl}, max: 280)))`;
+        animateRail([[40, 68], [210, 68], [495, 68], [555, 92], [620, 162], [742, 162]], 'var(--err)');
+        sfx.fail(); return;
+      }
+
+      banner.className = 'sim-result-banner is-ok';
+      banner.textContent = `Ok(DraftGrrr(author: Handle("@${h}"), body: GrrrBody("${b.slice(0, 42)}${b.length > 42 ? '…' : ''}")))`;
+      animateRail([[40, 68], [210, 68], [495, 68], [742, 68]], 'var(--ok)');
+      sfx.pass();
+    }
+
+    document.getElementById('rail-run').addEventListener('click', runRail);
+    document.querySelectorAll('[data-rail-preset]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const p = btn.dataset.railPreset;
+        if (p === 'ok')         { authorEl.value = '@Bear_Dev'; bodyEl.value = 'Shipping grrr on BEAM + JS 🐻'; }
+        if (p === 'bad-handle') { authorEl.value = '@a!';       bodyEl.value = ''; }
+        if (p === 'bad-body')   { authorEl.value = '@Bear_Dev'; bodyEl.value = '   '; }
+        runRail();
+      });
+    });
+  });
+  </script>
+</body>
+</html>
