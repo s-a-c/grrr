@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0004: SQLite Schema, Automatic Migrations &amp; Typed SQL Queries</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0004</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html">0001</a>
+        <a href="./0002-composing-results-with-use-and-dual-target.html">0002</a>
+        <a href="./0003-booting-glimr-and-wiring-shared.html">0003</a>
+        <a href="./0004-sqlite-schema-migrations-and-typed-queries.html" aria-current="page">Lesson 0004</a>
+        <a href="../reference/glossary.html">Glossary</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/4</span>
+      </div>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0004 · Persistence &amp; Typed SQL</p>
+        <h1>SQLite Schema, Auto-Migrations &amp; Typed Queries in Glimr</h1>
+        <p class="subtitle">
+          Replace Eloquent's runtime magic with Glimr's compile-time persistence pipeline: declarative Gleam schemas, snapshot-diffed SQLite migrations, and plain <code>.sql</code> files compiled into type-checked Gleam functions.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge glimr">■ grrr_schema.gleam</span>
+          <span class="domain-badge beam">● SQLite DbPool</span>
+          <span class="domain-badge gleam">◇ Typed gen/grrr.gleam</span>
+          <span class="domain-badge ok">✓ GET /api/grrrs</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Worktree:</strong> <code>lesson-0004/</code></span>
+          <span><strong>Win:</strong> Migrated <code>grrrs</code> table + live <code>GET /api/grrrs</code></span>
+        </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D Glimr database pipeline constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">Schema</div>
+            <div class="prism-face f2">db_gen</div>
+            <div class="prism-face f3">SQLite</div>
+            <div class="prism-face f4">.sql</div>
+            <div class="prism-face f5">use &lt;-</div>
+            <div class="prism-face f6">DbPool</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: PIPELINE VISUAL & LARAVEL COMPARISON -->
+    <section id="sec-pipeline" class="reveal">
+      <h2>1. Eloquent vs. Glimr's Typed SQL Pipeline</h2>
+      <p>
+        In Laravel, you write imperative PHP migration files (<code>Schema::create(...)</code>) and query via Eloquent's dynamic ActiveRecord magic (where a misspelled column only explodes at runtime). In <a href="https://github.com/glimr-org/glimr#database" target="_blank" rel="noopener noreferrer">Glimr</a>, you declare your table <strong>once</strong> in <code>grrr_schema.gleam</code> and write real <code>.sql</code> queries — Glimr diffs the schema to generate migrations and compiles your SQL into typed Gleam functions.
+      </p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 860 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Glimr schema to migration to typed repository pipeline">
+          <defs>
+            <marker id="arr-db" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--glimr)"/>
+            </marker>
+            <marker id="arr-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--ok)"/>
+            </marker>
+          </defs>
+
+          <!-- Schema -->
+          <rect x="14" y="24" width="175" height="62" rx="10" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="101" y="48" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--gleam-ink)">grrr_schema.gleam</text>
+          <text x="101" y="68" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Declarative table + indexes</text>
+
+          <!-- Queries -->
+          <rect x="14" y="108" width="175" height="62" rx="10" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="101" y="132" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--lustre-ink)">queries/*.sql</text>
+          <text x="101" y="152" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Plain SQL + Editor LSP</text>
+
+          <!-- Arrows into db_gen -->
+          <path class="flow-line" d="M 189 55 L 258 84" stroke="var(--glimr)" stroke-width="2.2" fill="none" marker-end="url(#arr-db)"/>
+          <path class="flow-line" d="M 189 139 L 258 110" stroke="var(--glimr)" stroke-width="2.2" fill="none" marker-end="url(#arr-db)"/>
+
+          <!-- db_gen --migrate -->
+          <rect x="262" y="58" width="178" height="78" rx="12" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2.2"/>
+          <text x="351" y="88" text-anchor="middle" font-family="monospace" font-size="12" font-weight="850" fill="var(--glimr-ink)">./glimr db_gen</text>
+          <text x="351" y="107" text-anchor="middle" font-family="monospace" font-size="11" font-weight="700" fill="var(--text)">--migrate</text>
+          <text x="351" y="125" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="var(--subtext0)">Snapshot diff + SQL codegen</text>
+
+          <!-- Arrows out -->
+          <path class="flow-line" d="M 440 80 L 512 55" stroke="var(--ok)" stroke-width="2.2" fill="none" marker-end="url(#arr-ok)"/>
+          <path class="flow-line" d="M 440 114 L 512 139" stroke="var(--ok)" stroke-width="2.2" fill="none" marker-end="url(#arr-ok)"/>
+
+          <!-- Migration SQL -> SQLite -->
+          <rect x="516" y="24" width="330" height="62" rx="10" fill="var(--beam-tint)" stroke="var(--beam)" stroke-width="2"/>
+          <text x="681" y="48" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--beam-ink)">_migrations/*.sql → data.db</text>
+          <text x="681" y="68" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">Auto-generated SQLite DDL applied to DbPool</text>
+
+          <!-- Typed Repository -->
+          <rect x="516" y="108" width="330" height="62" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="681" y="132" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--ok-ink)">gen/grrr.gleam (4 variants / query)</text>
+          <text x="681" y="152" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">list · list_wc · list_or_fail · list_or_fail_wc</text>
+        </svg>
+        <figcaption>
+          <strong>Figure 1:</strong> Glimr's database codegen loop. Because <code>queries/list_*.sql</code> starts with <code>list</code>, Glimr automatically types the return value as <code>List(Grrr)</code>; any other filename returns a single <code>Grrr</code>.
+        </figcaption>
+      </figure>
+
+      <!-- INTERACTIVE 4-VARIANT QUERY SELECTOR -->
+      <div class="instrument" id="sec-variants">
+        <div class="instrument-bar">
+          <h3>Interactive Explorer: The 4 Generated Functions per SQL Query</h3>
+          <div class="seg-group" role="group" aria-label="Query variant">
+            <button type="button" class="seg-btn" data-qvar="plain" aria-pressed="false">list_recent</button>
+            <button type="button" class="seg-btn" data-qvar="wc" aria-pressed="false">list_recent_wc</button>
+            <button type="button" class="seg-btn" data-qvar="or_fail" aria-pressed="true">list_recent_or_fail</button>
+            <button type="button" class="seg-btn" data-qvar="or_fail_wc" aria-pressed="false">list_recent_or_fail_wc</button>
+          </div>
+        </div>
+        <pre><code id="qvar-code">// Continuation-style for HTTP controllers — pairs cleanly with Lesson 0002's `use`!
+pub fn index(ctx: Context(App)) -&gt; Response {
+  use grrrs &lt;- grrr.list_recent_or_fail(ctx.app.db)
+  // On DbError: short-circuits to 404 / 503 / 500 automatically.
+  ...
+}</code></pre>
+        <p id="qvar-note" style="margin-bottom:0;font-size:0.9rem;">
+          <strong>Best for controllers:</strong> Takes <code>ctx.app.db</code> + a continuation. On DB failure, short-circuits directly to a 404/503/500 <code>Response</code> so your happy path stays completely flat.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>2. Hands-On Lab (10 minutes)</h2>
+      <p>Run all commands inside your <code>lesson-0004/server/</code> directory. <em>(Tip: if you want a custom port like <code>4567</code>, edit <code>lesson-0004/server/.env</code> before starting <code>./glimr run</code>.)</em></p>
+
+      <ol class="steps">
+        <li>
+          <strong>Generate the <code>grrr</code> model scaffold</strong>
+<pre><code># From lesson-0004/server/
+./glimr make_model grrr</code></pre>
+          Inspect what Glimr created under <code>src/database/main/models/grrr/</code>: <code>grrr_schema.gleam</code> and <code>queries/</code> (<code>create.sql</code>, <code>find.sql</code>, <code>list.sql</code>, <code>update.sql</code>, <code>delete.sql</code>).
+        </li>
+
+        <li>
+          <strong>Define the <code>grrrs</code> table in <code>src/database/main/models/grrr/grrr_schema.gleam</code></strong>
+<pre><code>import glimr/db/schema
+
+pub const table_name = "grrrs"
+
+pub fn definition() {
+  schema.table(table_name, [
+    schema.id(),
+    schema.string("author_handle"),
+    schema.text("body"),
+    schema.unix_timestamps(),
+  ])
+  |&gt; schema.indexes([
+    schema.index(["author_handle"]),
+  ])
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Add a custom SQL query <code>src/database/main/models/grrr/queries/list_recent.sql</code></strong>
+<pre><code>SELECT * FROM grrrs
+ORDER BY created_at DESC, id DESC
+LIMIT 50;</code></pre>
+          Because the filename starts with <code>list_</code>, Glimr types it as returning <code>List(Grrr)</code>.
+        </li>
+
+        <li>
+          <strong>Generate migrations, apply them to SQLite, and compile the typed repository</strong>
+<pre><code># Inside lesson-0004/server/
+./glimr db_gen --migrate</code></pre>
+          Open the newly generated <code>src/database/main/_migrations/*_create_grrrs_table.sql</code> and <code>src/database/main/models/grrr/gen/grrr.gleam</code> to see the exact SQL and Gleam functions Glimr wrote for you!
+        </li>
+
+        <li>
+          <strong>Expose <code>GET /api/grrrs</code> in <code>src/app/http/controllers/api/grrr_controller.gleam</code></strong>
+<pre><code>import app/app.{type App}
+import database/main/models/grrr/gen/grrr.{type Grrr}
+import gleam/json
+import glimr/http/context.{type Context}
+import glimr/http/response.{type Response}
+
+/// List the 50 most recent Grrrs as JSON.
+///
+/// @get "/api/grrrs"
+///
+pub fn index(ctx: Context(App)) -&gt; Response {
+  use grrrs &lt;- grrr.list_recent_or_fail(ctx.app.db)
+
+  json.object([
+    #("grrrs", json.array(grrrs, encode_grrr)),
+  ])
+  |&gt; response.json(200)
+}
+
+fn encode_grrr(item: Grrr) -&gt; json.Json {
+  json.object([
+    #("id", json.int(item.id)),
+    #("author_handle", json.string(item.author_handle)),
+    #("body", json.string(item.body)),
+    #("created_at", json.int(item.created_at)),
+  ])
+}</code></pre>
+          Boot <code>./glimr run</code> and verify in another terminal:
+<pre><code>curl -s http://localhost:8000/api/grrrs | jq .
+# Expected: { "grrrs": [] }</code></pre>
+          *(Replace <code>8000</code> with your <code>APP_PORT</code> if you customized <code>server/.env</code>.)*
+        </li>
+      </ol>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0004 Win Condition</p>
+        <p>
+          Your SQLite database has a migrated <code>grrrs</code> table, Glimr generated the typed <code>gen/grrr.gleam</code> repository, <code>GET /api/grrrs</code> returns <code>{"grrrs":[]}</code> using <code>use &lt;- grrr.list_recent_or_fail</code>, and <code>./scripts/verify-lesson.sh</code> passes from <code>lesson-0004/</code>. Next in <strong>Lesson 0005</strong>: <code>POST /api/grrrs</code> with <code>post.new_draft_all</code> 422 validation + your first Loom Admin timeline page!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
+      <h2>3. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">How does Glimr generate SQL migrations?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr uses declarative Gleam schema modules rather than PHP ActiveRecord classes.">By parsing Eloquent PHP model classes.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Glimr compares `*_schema.gleam` against a stored snapshot and emits driver-specific SQLite or Postgres DDL.">By diffing schema definitions against snapshots.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Controller annotations generate routes in `src/compiled/routes/`, not database migrations.">By scanning controller doc-comment route annotations.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Glimr diffs against its tracked schema snapshot so migrations stay deterministic across machines.">By inspecting live production SQLite tables.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Which command generates migrations and typed query functions, then migrates SQLite?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="There is no `--reset-db` flag on `./glimr run`; use `./glimr db_gen --migrate`.">Run ./glimr run --reset-db inside server.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Plain `gleam build` compiles Gleam code only; Glimr's CLI drives DB codegen and migrations.">Run gleam build --migrate inside server.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! `./glimr db_gen --migrate` generates migrations, runs them, and compiles `queries/*.sql` into typed Gleam modules.">Run ./glimr db_gen --migrate inside server.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="`make_model` scaffolds a new model folder; `db_gen --migrate` generates and applies migrations.">Run ./glimr make_model --apply inside server.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">How does Glimr decide whether a <code>.sql</code> query returns <code>List(Grrr)</code> or a single <code>Grrr</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Exactly! `list.sql` and `list_*.sql` generate `Result(List(T), DbError)`; all other names return a single row.">Files prefixed with list return lists.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Single-row queries like `find.sql` return `Result(Grrr, DbError)`, not a list.">Every SQL file always returns lists.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Arity comes from the filename prefix convention, not SQL comments.">SQLite column comments specify return arity.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="`gleam.toml` declares package dependencies, not SQL query return shapes.">You annotate return types inside gleam.toml.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">What is the purpose of generated <code>_or_fail</code> query variants like <code>grrr.list_recent_or_fail</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Deadlock retries happen in transactions, not via `_or_fail`.">They retry failed queries five times.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="They return an HTTP error `Response` cleanly without crashing the VM.">They crash the entire BEAM VM.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="They never hide database errors as empty lists; they surface proper HTTP status codes.">They return empty lists on error.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! `_or_fail` takes a `use` continuation and short-circuits directly to 404/503/500 responses on failure.">They short-circuit HTTP handlers to errors.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">When should you call a <code>_wc</code> query variant like <code>grrr.create_wc</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Caching uses `glimr/cache`, not `_wc` database connection functions.">When caching JSON in file storage.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! `_wc` ("with connection") accepts a checked-out transaction `conn` instead of checking out a new pool connection.">When running queries inside a transaction.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Database queries only run on the Erlang/BEAM server, not Bun.">When compiling shared code for Bun.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Loom views render pure data passed in by controllers.">When rendering static Loom HTML views.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Why does Glimr have you write plain <code>.sql</code> files inside <code>queries/</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr runs `lpil/sqlight` directly on BEAM; `.sql` files are an ergonomic design choice.">Gleam cannot call SQLite from Erlang.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="SQLite fully supports parameterized queries (`$1`, `$2`), which Glimr compiles safely.">SQLite rejects parameterized queries from code.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! You get real SQL syntax highlighting, editor SQL LSP autocomplete, AND generated type-checked Gleam functions.">Editors give SQL LSP plus types.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Schema migrations still run normally via `./glimr db_gen --migrate`.">Plain SQL skips running database migrations.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">How do Glimr controllers access the SQLite connection pool?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! `glimr_app.gleam` creates the `DbPool` once in `App` and passes it explicitly via `Context(App)` (`ctx.app.db`).">Via ctx.app.db passed into handlers.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Unlike Laravel's `DB::` facade, Glimr passes dependencies explicitly as typed values.">Via a global static DB facade.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Config loads once at boot to initialize the shared pool, not per query.">Via environment variables read per query.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Sessions store user state, not database connection pools.">Via hidden thread-local Wisp session keys.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">Why must <code>DB_POOL_SIZE=1</code> be set when using SQLite <code>:memory:</code> in tests?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="In-memory SQLite supports arbitrarily many tables.">SQLite forbids more than one table.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="BEAM connection pools work across concurrent actors normally.">BEAM actors cannot share memory pools.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Migrations run fine on any pool size; the issue is `:memory:` isolation.">Glimr ignores migrations with larger pools.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Exactly! Every SQLite `:memory:` connection opens a separate blank DB unless `DB_POOL_SIZE=1` (or `cache=shared` URI) is used.">Each connection gets its own database.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score>Answered 0 / 4 · Correct 0 / 4</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset &amp; Shuffle</button>
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <div class="footer-grid">
+        <div class="footer-box">
+          <h3>Primary Source Reading</h3>
+          <p>
+            Read <a href="https://github.com/glimr-org/glimr#database" target="_blank" rel="noopener noreferrer">Glimr README: Database, Migrations &amp; Queries</a> for column modifiers, enums, arrays, and transactions.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Community &amp; Wisdom</h3>
+          <p>
+            Ask in the <a href="https://discord.gg/Fm8aMwZ" target="_blank" rel="noopener noreferrer">Gleam Discord Server</a> (<code>#web</code>) when deciding between SQLite and PostgreSQL for production BEAM deployments.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Ask Your Teacher</h3>
+          <p>
+            Hit a schema/codegen error, curious how `db_gen` handles column renames, or got `GET /api/grrrs` returning `{"grrrs":[]}`? Ping me in chat!
+          </p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'make_model',   sub: 'Scaffold schema + SQL', ring: 0, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',      snd: 'glimr' },
+        { label: 'schema.table', sub: 'Declarative DDL',       ring: 0, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-pipeline', snd: 'gleam' },
+        { label: 'db_gen',       sub: 'Auto-migrate + gen',    ring: 0, idx: 2, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-pipeline', snd: 'pass' },
+        { label: 'SQLite Pool',  sub: 'ctx.app.db',            ring: 0, idx: 3, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-lab',      snd: 'beam' },
+        { label: 'list_*.sql',   sub: 'Returns List(Grrr)',    ring: 1, idx: 0, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-lab',      snd: 'lustre' },
+        { label: '_or_fail',     sub: 'use <- short-circuit',  ring: 1, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-variants', snd: 'gleam' },
+        { label: '_wc',          sub: 'Transaction conn',      ring: 1, idx: 2, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-variants', snd: 'glimr' },
+        { label: '/api/grrrs',   sub: 'Live JSON feed',        ring: 1, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab',      snd: 'pass' }
+      ]);
+    }
+
+    const QVAR = {
+      plain: {
+        code: `// Explicit Result handling — ideal for background jobs, CLI commands, or custom error JSON\ncase grrr.list_recent(ctx.app.db) {\n  Ok(grrrs) -> ...\n  Error(db_err) -> ...\n}`,
+        note: '<strong>Standard pool query:</strong> Checks out a connection from <code>DbPool</code>, runs the SQL, returns the connection, and gives you <code>Result(List(Grrr), DbError)</code>.'
+      },
+      wc: {
+        code: `// "With Connection" — runs on an existing transaction connection\nuse conn <- db.transaction(ctx.app.db)\nuse grrrs <- result.try(grrr.list_recent_wc(conn))\n...`,
+        note: '<strong>Transaction variant (<code>_wc</code>):</strong> Reuses the same checked-out <code>conn</code> so multiple writes commit or roll back atomically.'
+      },
+      or_fail: {
+        code: `// Continuation-style for HTTP controllers — pairs cleanly with Lesson 0002's \`use\`!\npub fn index(ctx: Context(App)) -> Response {\n  use grrrs <- grrr.list_recent_or_fail(ctx.app.db)\n  // On DbError: short-circuits to 404 / 503 / 500 automatically.\n  ...\n}`,
+        note: '<strong>Best for controllers:</strong> Takes <code>ctx.app.db</code> + a continuation. On DB failure, short-circuits directly to a 404/503/500 <code>Response</code> so your happy path stays completely flat.'
+      },
+      or_fail_wc: {
+        code: `// Combines transaction connection + HTTP short-circuit error handling\npub fn store(ctx: Context(App)) -> Response {\n  use conn <- db.transaction_or_fail(ctx.app.db)\n  use grrrs <- grrr.list_recent_or_fail_wc(conn)\n  ...\n}`,
+        note: '<strong>HTTP transaction variant (<code>_or_fail_wc</code>):</strong> Same flat <code>use</code> ergonomics as <code>_or_fail</code>, inside a database transaction.'
+      }
+    };
+
+    const qCode = document.getElementById('qvar-code');
+    const qNote = document.getElementById('qvar-note');
+    document.querySelectorAll('[data-qvar]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const v = QVAR[btn.dataset.qvar];
+        document.querySelectorAll('[data-qvar]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        qCode.textContent = v.code;
+        qNote.innerHTML = v.note;
+        if (window.GrrrSFX) window.GrrrSFX.click();
+      });
+    });
+  });
+  </script>
+</body>
+</html>
