@@ -1,0 +1,9 @@
+#:schema https://worktrunk.dev/schema/project-config.json
+# Shared project Worktrunk configuration for `grrr`
+# See docs/REPO-MANAGEMENT.md for both Worktrunk and manual git instructions.
+
+[post-create]
+setup = "./scripts/setup-worktree.sh"
+
+[pre-merge]
+verify = "./scripts/verify-lesson.sh"

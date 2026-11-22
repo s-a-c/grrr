@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.gleam text diff=rust
+*.toml text
+*.md text
+*.html text
+*.css text
+*.js text
+*.sh text eol=lf
