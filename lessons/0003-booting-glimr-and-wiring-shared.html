@@ -285,9 +285,50 @@
       </figure>
     </section>
 
-    <!-- SECTION 2: HANDS-ON LAB -->
+    <!-- SECTION 2: DEPENDENCY COMPATIBILITY IN A GLEAM MONOREPO -->
+    <section id="sec-deps" class="reveal">
+      <h2>2. Gleam &amp; Glimr Dependencies: Preventing Lockfile Drift</h2>
+      <p>
+        When you clone an upstream starter template like <code>glimr-org/glimr</code> and wire it to a local path dependency (<code>shared = { path = "../shared" }</code>), you will hit a classic monorepo gotcha: <strong>stale template lockfiles</strong>.
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>What Happens on Fresh Clone</h3>
+<pre><code># shared/gleam.toml (Gleam 1.19)
+gleam_stdlib = "&gt;= 1.0.0 and &lt; 2.0.0"
+# shared/manifest.toml -&gt; gleam_stdlib 1.2.0
+
+# glimr-org/glimr template (upstream)
+gleam_stdlib = "&gt;= 0.44.0 and &lt; 2.0.0"
+# server/manifest.toml -&gt; locked at 0.71.0 ❌</code></pre>
+          <p><small><code>gleam deps download</code> strictly obeys <code>manifest.toml</code> (like <code>composer install</code>), so a locked <code>0.71.0</code> conflicts with <code>shared</code>'s <code>&gt;= 1.0.0</code> requirement.</small></p>
+        </div>
+        <div class="compare-card">
+          <h3>How to Resolve &amp; Prevent It</h3>
+<pre><code># 1. Align server/gleam.toml with shared/
+gleam_stdlib = "&gt;= 1.0.0 and &lt; 2.0.0"
+shared = { path = "../shared" }
+
+# 2. Re-solve the lockfile (≈ composer update)
+gleam deps update</code></pre>
+          <p><small>Gleam's PubGrub solver upgrades <code>server/manifest.toml</code> to <code>gleam_stdlib 1.2.0</code>, <code>glimr 1.4.0</code>, and <code>gleeunit 1.11.0</code> — 100% aligned with <code>shared/</code>.</small></p>
+        </div>
+      </div>
+
+      <div class="callout beam">
+        <p class="callout-title">3 Rules for Dependency Hygiene Across <code>shared/</code>, <code>server/</code>, and <code>client/</code></p>
+        <ul>
+          <li><strong>Know <code>download</code> vs <code>update</code>:</strong> Use <code>gleam deps download</code> for fast, deterministic installs of an existing lockfile (<code>scripts/setup-worktree.sh</code>); use <code>gleam deps update</code> whenever you import a starter template, add a path dependency, or upgrade Gleam.</li>
+          <li><strong>Keep <code>gleam_stdlib</code> bounds aligned:</strong> Match the same major range (<code>&gt;= 1.0.0 and &lt; 2.0.0</code>) across <code>shared/</code>, <code>server/</code>, and <code>client/</code> so every package resolves to the exact same stdlib version.</li>
+          <li><strong>Commit synchronized <code>manifest.toml</code> files:</strong> Always commit updated <code>manifest.toml</code> lockfiles together after running <code>./scripts/verify-lesson.sh</code> so future worktrees and students get deterministic green builds on first run.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SECTION 3: HANDS-ON LAB -->
     <section id="sec-lab" class="reveal">
-      <h2>2. Hands-On Lab (10 minutes)</h2>
+      <h2>3. Hands-On Lab (10 minutes)</h2>
       <p>Run all commands from the root of your <code>lesson-0003/</code> worktree.</p>
 
       <ol class="steps">
@@ -298,16 +339,18 @@
 git clone --depth 1 https://github.com/glimr-org/glimr.git server
 \rm -rf server/.git
 cd server
-/bin/cp .env.example .env
-gleam deps download</code></pre>
+/bin/cp .env.example .env</code></pre>
         </li>
 
         <li>
-          <strong>Wire <code>shared/</code> as a local path dependency in <code>server/gleam.toml</code></strong><br>
-          Open <code>server/gleam.toml</code> and add one line under <code>[dependencies]</code>:
+          <strong>Align <code>gleam_stdlib</code>, wire <code>shared/</code>, and re-solve the lockfile</strong><br>
+          Open <code>server/gleam.toml</code>, update <code>gleam_stdlib</code> to match <code>shared/</code>, and add <code>shared</code> as a local path dependency under <code>[dependencies]</code>:
 <pre><code>[dependencies]
+gleam_stdlib = "&gt;= 1.0.0 and &lt; 2.0.0"
+# ...keep existing glimr dependencies...
 shared = { path = "../shared" }</code></pre>
-          That's it! Gleam resolves local path dependencies directly — no publishing, no npm workspaces, zero sync step.
+          Then run <code>gleam deps update</code> (instead of <code>download</code>) to refresh the template's stale <code>manifest.toml</code> lockfile:
+<pre><code>gleam deps update</code></pre>
         </li>
 
         <li>
@@ -354,10 +397,10 @@ pub fn show() -&gt; Response {
       </div>
     </section>
 
-    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <!-- SECTION 4: RANDOMIZED RETRIEVAL CHECK -->
     <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
-      <h2>3. Quick Retrieval Check</h2>
-      <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
+      <h2>4. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 4 random questions from a 10-question pool.</p>
 
       <div class="quiz-card" data-answer="b">
         <p class="quiz-prompt">How does Glimr register a controller route?</p>
@@ -443,6 +486,28 @@ pub fn show() -&gt; Response {
           <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr controllers use `glimr/http/response` rather than coupling directly to `wisp`.">Pipe json into wisp.json_body(200) helper.</button>
           <button type="button" class="quiz-option" data-choice="c" data-explain="Loom renders server HTML templates, not JSON API responses.">Pipe json into loom.render(200) helper.</button>
           <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! `json.object([...]) |> response.json(200)` from `glimr/http/response` serializes and sets the JSON content type cleanly.">Pipe json into response.json(200) helper.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Why can <code>gleam deps download</code> conflict right after cloning <code>glimr-org/glimr</code> and adding <code>shared</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr works seamlessly with local path dependencies once lockfiles align.">Glimr forbids importing local path packages.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! The upstream starter template's `manifest.toml` pins an older `gleam_stdlib` (`0.71.0`) than `shared`'s `>= 1.0.0` bound.">Template manifest.toml locked older gleam_stdlib.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="`gleam_stdlib` compiles cleanly to both BEAM and JavaScript.">Gleam stdlib cannot compile on BEAM.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Worktrees share your global Hex package cache normally.">Worktrees block Hex package cache reads.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Which command re-solves a stale <code>manifest.toml</code> lockfile against updated <code>gleam.toml</code> bounds?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="`gleam clean` deletes `build/` artifacts without re-solving `manifest.toml`.">Run gleam clean inside the package.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`gleam deps download` strictly obeys existing `manifest.toml` pins (like `composer install`).">Run gleam deps download for updates.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! `gleam deps update` runs PubGrub to re-solve and update `manifest.toml` (like `composer update`).">Run gleam deps update to re-solve.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="`gleam format` only formats `.gleam` source files.">Run gleam format to refresh manifests.</button>
         </div>
         <div class="quiz-feedback" aria-live="polite"></div>
       </div>

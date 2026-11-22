@@ -162,6 +162,11 @@
             <td><code>result.try</code> chains fallible steps and short-circuits on the first <code>Error</code>; <code>result.map_error</code> wraps distinct error types into a unified union so they can be chained.</td>
             <td><a href="https://hexdocs.pm/gleam_stdlib/gleam/result.html">gleam/result HexDocs</a></td>
           </tr>
+          <tr>
+            <td><strong><code>gleam.toml</code> vs <code>manifest.toml</code></strong></td>
+            <td><code>gleam.toml</code> declares version ranges (≈ <code>composer.json</code>); <code>manifest.toml</code> locks exact versions (≈ <code>composer.lock</code>). Use <code>gleam deps download</code> to install locked versions and <code>gleam deps update</code> to re-solve conflicts when combining packages or starter templates.</td>
+            <td><a href="https://gleam.run/writing-gleam/gleam-toml/">Gleam Docs: gleam.toml</a></td>
+          </tr>
         </tbody>
       </table>
     </section>

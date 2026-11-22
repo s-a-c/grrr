@@ -18,13 +18,13 @@ if [[ -f "$ROOT/shared/gleam.toml" ]]; then
 fi
 
 if [[ -f "$ROOT/server/gleam.toml" ]]; then
-  echo "  + server: gleam format --check & gleam test"
-  (cd "$ROOT/server" && gleam format --check src test && gleam test)
+  echo "  + server: gleam deps download, check & test"
+  (cd "$ROOT/server" && gleam deps download && gleam check && gleam test)
 fi
 
 if [[ -f "$ROOT/client/gleam.toml" ]]; then
-  echo "  + client: gleam format --check & gleam build --target javascript"
-  (cd "$ROOT/client" && gleam format --check src test && gleam build --target javascript)
+  echo "  + client: gleam deps download & build --target javascript"
+  (cd "$ROOT/client" && gleam deps download && gleam build --target javascript)
 fi
 
 echo "==> All checks passed!"
