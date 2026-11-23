@@ -11,7 +11,7 @@
 import app/http/controllers/api/grrr_controller as api_grrr_controller
 import app/http/controllers/api/health_controller as api_health_controller
 import app/http/controllers/api/welcome_controller as api_welcome_controller
-import gleam/http.{Get}
+import gleam/http.{Get, Post}
 import glimr/http/response
 
 pub fn routes(path, method, ctx) {
@@ -19,7 +19,8 @@ pub fn routes(path, method, ctx) {
     ["api", "grrrs"] ->
       case method {
         Get -> api_grrr_controller.index(ctx)
-        _ -> response.method_not_allowed([Get])
+        Post -> api_grrr_controller.store(ctx)
+        _ -> response.method_not_allowed([Get, Post])
       }
 
     ["api", "health"] ->

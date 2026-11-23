@@ -10,7 +10,7 @@ pub fn definition() {
     schema.uuid("uuid"),
     schema.string("author_handle"),
     schema.text("body"),
-    schema.unix_timestamps(),
+    schema.timestamps(),
   ])
   |> schema.indexes([
     schema.unique(["uuid"]),

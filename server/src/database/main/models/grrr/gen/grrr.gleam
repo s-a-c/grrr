@@ -13,8 +13,8 @@ pub type Grrr {
     uuid: String,
     author_handle: String,
     body: String,
-    created_at: Int,
-    updated_at: Int,
+    created_at: String,
+    updated_at: String,
   )
 }
 
@@ -23,8 +23,8 @@ fn row_decoder() -> decode.Decoder(Grrr) {
   use uuid <- decode.field(1, decode.string)
   use author_handle <- decode.field(2, decode.string)
   use body <- decode.field(3, decode.string)
-  use created_at <- decode.field(4, decode.int)
-  use updated_at <- decode.field(5, decode.int)
+  use created_at <- decode.field(4, decode.string)
+  use updated_at <- decode.field(5, decode.string)
   decode.success(Grrr(id, uuid, author_handle, body, created_at, updated_at))
 }
 
@@ -35,8 +35,8 @@ pub fn encoder() -> fn(Grrr) -> json.Json {
       #("uuid", json.string(model.uuid)),
       #("author_handle", json.string(model.author_handle)),
       #("body", json.string(model.body)),
-      #("created_at", json.int(model.created_at)),
-      #("updated_at", json.int(model.updated_at)),
+      #("created_at", json.string(model.created_at)),
+      #("updated_at", json.string(model.updated_at)),
     ])
   }
 }
@@ -46,8 +46,8 @@ pub fn decoder() -> decode.Decoder(Grrr) {
   use uuid <- decode.field("uuid", decode.string)
   use author_handle <- decode.field("author_handle", decode.string)
   use body <- decode.field("body", decode.string)
-  use created_at <- decode.field("created_at", decode.int)
-  use updated_at <- decode.field("updated_at", decode.int)
+  use created_at <- decode.field("created_at", decode.string)
+  use updated_at <- decode.field("updated_at", decode.string)
   decode.success(Grrr(id, uuid, author_handle, body, created_at, updated_at))
 }
 
@@ -135,7 +135,7 @@ pub fn delete_or_fail_wc(
 pub fn update(
   pool pool: db.DbPool,
   id id: Int,
-  updated_at updated_at: Int,
+  updated_at updated_at: String,
 ) -> Result(Grrr, db.DbError) {
   use connection <- db.get_connection(pool)
   update_wc(connection: connection, id: id, updated_at: updated_at)
@@ -144,13 +144,13 @@ pub fn update(
 pub fn update_wc(
   connection connection: db.Connection,
   id id: Int,
-  updated_at updated_at: Int,
+  updated_at updated_at: String,
 ) -> Result(Grrr, db.DbError) {
   case
     db.query_with(
       connection,
       "UPDATE grrrs SET updated_at = $2 WHERE id = $1 RETURNING *",
-      [db.int(id), db.int(updated_at)],
+      [db.int(id), db.string(updated_at)],
       row_decoder(),
     )
   {
@@ -164,7 +164,7 @@ pub fn update_wc(
 pub fn update_or_fail(
   pool pool: db.DbPool,
   id id: Int,
-  updated_at updated_at: Int,
+  updated_at updated_at: String,
   then then: fn(Grrr) -> Response,
 ) -> Response {
   use connection <- db.get_connection(pool)
@@ -179,7 +179,7 @@ pub fn update_or_fail(
 pub fn update_or_fail_wc(
   connection connection: db.Connection,
   id id: Int,
-  updated_at updated_at: Int,
+  updated_at updated_at: String,
   then then: fn(Grrr) -> Response,
 ) -> Response {
   case update_wc(connection: connection, id: id, updated_at: updated_at) {
@@ -234,12 +234,18 @@ pub fn list_recent_or_fail_wc(
 
 pub fn create(
   pool pool: db.DbPool,
-  created_at created_at: Int,
-  updated_at updated_at: Int,
+  uuid uuid: String,
+  author_handle author_handle: String,
+  body body: String,
+  created_at created_at: String,
+  updated_at updated_at: String,
 ) -> Result(Grrr, db.DbError) {
   use connection <- db.get_connection(pool)
   create_wc(
     connection: connection,
+    uuid: uuid,
+    author_handle: author_handle,
+    body: body,
     created_at: created_at,
     updated_at: updated_at,
   )
@@ -247,14 +253,23 @@ pub fn create(
 
 pub fn create_wc(
   connection connection: db.Connection,
-  created_at created_at: Int,
-  updated_at updated_at: Int,
+  uuid uuid: String,
+  author_handle author_handle: String,
+  body body: String,
+  created_at created_at: String,
+  updated_at updated_at: String,
 ) -> Result(Grrr, db.DbError) {
   case
     db.query_with(
       connection,
-      "INSERT INTO grrrs (created_at, updated_at) VALUES ($1, $2) RETURNING *",
-      [db.int(created_at), db.int(updated_at)],
+      "INSERT INTO grrrs (uuid, author_handle, body, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [
+        db.string(uuid),
+        db.string(author_handle),
+        db.string(body),
+        db.string(created_at),
+        db.string(updated_at),
+      ],
       row_decoder(),
     )
   {
@@ -267,13 +282,19 @@ pub fn create_wc(
 
 pub fn create_or_fail(
   pool pool: db.DbPool,
-  created_at created_at: Int,
-  updated_at updated_at: Int,
+  uuid uuid: String,
+  author_handle author_handle: String,
+  body body: String,
+  created_at created_at: String,
+  updated_at updated_at: String,
   then then: fn(Grrr) -> Response,
 ) -> Response {
   use connection <- db.get_connection(pool)
   create_or_fail_wc(
     connection: connection,
+    uuid: uuid,
+    author_handle: author_handle,
+    body: body,
     created_at: created_at,
     updated_at: updated_at,
     then: then,
@@ -282,13 +303,19 @@ pub fn create_or_fail(
 
 pub fn create_or_fail_wc(
   connection connection: db.Connection,
-  created_at created_at: Int,
-  updated_at updated_at: Int,
+  uuid uuid: String,
+  author_handle author_handle: String,
+  body body: String,
+  created_at created_at: String,
+  updated_at updated_at: String,
   then then: fn(Grrr) -> Response,
 ) -> Response {
   case
     create_wc(
       connection: connection,
+      uuid: uuid,
+      author_handle: author_handle,
+      body: body,
       created_at: created_at,
       updated_at: updated_at,
     )

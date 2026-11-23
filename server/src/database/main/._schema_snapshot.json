@@ -6,8 +6,8 @@
         {"name": "uuid", "type": "Uuid", "nullable": false, "has_default": false},
         {"name": "author_handle", "type": "String", "nullable": false, "has_default": false},
         {"name": "body", "type": "Text", "nullable": false, "has_default": false},
-        {"name": "created_at", "type": "UnixTimestamp", "nullable": false, "has_default": false},
-        {"name": "updated_at", "type": "UnixTimestamp", "nullable": false, "has_default": false}
+        {"name": "created_at", "type": "Timestamp", "nullable": false, "has_default": false},
+        {"name": "updated_at", "type": "Timestamp", "nullable": false, "has_default": false}
       ],
       "indexes": [
         {"columns": ["uuid"], "unique": true, "name": null},
