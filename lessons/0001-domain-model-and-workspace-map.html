@@ -25,44 +25,7 @@
 <body>
   <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <div class="topbar-left">
-      <a class="brand" href="#top">
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
-          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
-          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
-        </svg>
-        <span>grrr · Lesson 0001</span>
-      </a>
-      <nav class="nav-links" aria-label="Course navigation">
-        <a href="./0001-domain-model-and-workspace-map.html" aria-current="page">Lesson 0001</a>
-        <a href="../reference/glossary.html">Glossary</a>
-        <a href="../MISSION.md">Mission</a>
-        <a href="../RESOURCES.md">Resources</a>
-      </nav>
-    </div>
-
-    <div class="topbar-controls">
-      <div class="mastery-pill" title="Quiz mastery for this lesson">
-        <span>Mastery</span>
-        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
-        <span id="mastery-count">0/3</span>
-      </div>
-
-      <div class="seg-group" role="group" aria-label="Color theme">
-        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
-        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
-        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
-      </div>
-
-      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
-      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
-      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
-        <span id="sound-label">Audio</span>
-      </button>
-    </div>
-  </header>
+  <header class="topbar" data-lesson="0001"></header>
 
   <main class="page" id="top">
     <!-- HERO + 3D ORBITAL CONSTELLATION -->
