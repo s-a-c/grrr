@@ -250,10 +250,10 @@ gleam add wisp youid gleam_time</code></pre>
     schema.text("body"),
     schema.timestamps(),
   ])</code></pre>
-          Replace the placeholder <code>src/database/main/models/grrr/queries/create.sql</code> with all 5 columns:
+          Replace the placeholder <code>src/database/main/models/grrr/queries/create.sql</code> with all 5 columns (<strong>omit the trailing <code>;</code></strong> — Glimr's SQL parser splits on whitespace after <code>RETURNING *</code>, so a trailing semicolon turns into an invalid <code>*;</code> parameter):
 <pre><code>INSERT INTO grrrs (uuid, author_handle, body, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING *;</code></pre>
+RETURNING *</code></pre>
           Then generate the schema diff migration, apply it to SQLite, and regenerate <code>gen/grrr.gleam</code>:
 <pre><code># Inside lesson-0005/server/
 ./glimr db_gen --migrate</code></pre>
