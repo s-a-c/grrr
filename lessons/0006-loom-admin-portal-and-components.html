@@ -299,10 +299,10 @@ props(uuid: String, deleted: Bool, confirming: Bool)
 ./glimr run
 
 # 2. In another terminal, post a sample Grrr:
-curl -s -X POST http://localhost:8000/api/grrrs \
+curl -s -X POST http://localhost:4567/api/grrrs \
   -H "Content-Type: application/json" \
   -d '{"author":"@bear_admin","body":"Hello Loom Live Portal! 🐻"}' | jq .</code></pre>
-          Visit <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a>, click <strong>Delete → Confirm Delete?</strong>, and watch the card update in place over <code>/loom/ws</code> with zero page reload!
+          Visit <a href="http://localhost:4567/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:4567/admin/grrrs</a>, click <strong>Delete → Confirm Delete?</strong>, and watch the card update in place over <code>/loom/ws</code> with zero page reload!
         </li>
       </ol>
 

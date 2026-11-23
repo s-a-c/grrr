@@ -12,7 +12,7 @@
 name = "${APP_NAME:-Glimr}"
 
 # The network port the web server listens on.
-port = "${APP_PORT:-8000}"
+port = "${APP_PORT:-4567}"
 
 # The secret key for encrypting sessions and signing tokens.
 # This MUST be set in your .env file — the app will crash
