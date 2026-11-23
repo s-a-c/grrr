@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0006: The Loom Admin Portal (Blade → Type-Checked Loom)</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0006</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html">0001</a>
+        <a href="./0002-composing-results-with-use-and-dual-target.html">0002</a>
+        <a href="./0003-booting-glimr-and-wiring-shared.html">0003</a>
+        <a href="./0004-sqlite-schema-migrations-and-typed-queries.html">0004</a>
+        <a href="./0005-post-grrrs-json-decoding-uuidv7-and-422.html">0005</a>
+        <a href="./0006-loom-admin-portal-and-components.html" aria-current="page">Lesson 0006</a>
+        <a href="../reference/glossary.html">Glossary</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/4</span>
+      </div>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0006 · Admin Portal &amp; Type-Checked Templates</p>
+        <h1>The <code>Loom</code> Admin Portal (<code>Blade</code> → Type-Checked Templates)</h1>
+        <p class="subtitle">
+          Build the first half of <code>grrr</code>'s two-app split: a server-rendered <strong>Admin Portal</strong> at <code>/admin/grrrs</code> powered by Glimr's Blade-inspired <a href="https://glimr.build/" target="_blank" rel="noopener noreferrer">Loom</a> engine, reusable <code>&lt;x-... /&gt;</code> components, and our Catppuccin Machine Room palette from <code>DESIGN.md</code>.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge glimr">■ .loom.html Templates</span>
+          <span class="domain-badge gleam">◇ props(...) Type-Checked</span>
+          <span class="domain-badge lustre">▲ &lt;x-grrr_card /&gt;</span>
+          <span class="domain-badge ok">✓ GET /admin/grrrs</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Worktree:</strong> <code>lesson-0006/</code></span>
+          <span><strong>Win:</strong> Live Catppuccin Admin Feed at <code>/admin/grrrs</code></span>
+        </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D Loom template pipeline constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">Loom</div>
+            <div class="prism-face f2">props</div>
+            <div class="prism-face f3">l-for</div>
+            <div class="prism-face f4">l-if</div>
+            <div class="prism-face f5">slot</div>
+            <div class="prism-face f6">Admin</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: BLADE VS LOOM -->
+    <section id="sec-loom" class="reveal">
+      <h2>1. Laravel Blade vs. Glimr Loom</h2>
+      <p>
+        Every `.loom.html` file compiles directly into a Gleam module inside <code>src/compiled/loom/</code> with a typed <code>render(...)</code> function. If you rename a field on <code>Grrr</code> or forget a prop on a component, <strong>Gleam refuses to compile</strong>.
+      </p>
+
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Interactive Translator: Blade vs. Loom</h3>
+          <div class="seg-group" role="group" aria-label="Template comparison">
+            <button type="button" class="seg-btn" data-tpl="loom" aria-pressed="true">Loom (.loom.html)</button>
+            <button type="button" class="seg-btn" data-tpl="blade" aria-pressed="false">Laravel Blade</button>
+          </div>
+        </div>
+        <pre><code id="tpl-code">---
+import database/main/models/grrr/gen/grrr.{type Grrr}
+props(grrrs: List(Grrr))
+---
+&lt;x-layouts:app&gt;
+  &lt;slot name="meta_title"&gt;grrr Admin&lt;/slot&gt;
+  &lt;p l-if="list.is_empty(grrrs)"&gt;No grrrs yet.&lt;/p&gt;
+  &lt;div l-else class="space-y-3"&gt;
+    &lt;x-grrr_card l-for="item in grrrs" :grrr="item" /&gt;
+  &lt;/div&gt;
+&lt;/x-layouts:app&gt;</code></pre>
+        <p id="tpl-note" style="margin-bottom:0;font-size:0.9rem;">
+          <strong>Loom (compile-time typed):</strong> Frontmatter declares <code>import</code>s and <code>props(...)</code>. <code>:grrr="item"</code> passes a typed Gleam <code>Grrr</code> struct to <code>&lt;x-grrr_card /&gt;</code> — zero runtime array lookups.
+        </p>
+      </div>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 860 175" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Loom compilation and HTML rendering pipeline">
+          <defs>
+            <marker id="arr-l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--glimr)"/>
+            </marker>
+          </defs>
+
+          <rect x="14" y="42" width="195" height="72" rx="10" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="111" y="70" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--lustre-ink)">admin/grrrs.loom.html</text>
+          <text x="111" y="90" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">props + l-for + &lt;x-grrr_card&gt;</text>
+
+          <line class="flow-line" x1="209" y1="78" x2="265" y2="78" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-l)"/>
+
+          <rect x="269" y="42" width="195" height="72" rx="10" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="366" y="70" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--gleam-ink)">compiled/loom/admin/grrrs</text>
+          <text x="366" y="90" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">render(grrrs: List(Grrr))</text>
+
+          <line class="flow-line" x1="464" y1="78" x2="520" y2="78" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-l)"/>
+
+          <rect x="524" y="42" width="160" height="72" rx="10" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="604" y="70" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--glimr-ink)">admin_controller</text>
+          <text x="604" y="90" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">response.string_tree(200)</text>
+
+          <line class="flow-line" x1="684" y1="78" x2="734" y2="78" stroke="var(--glimr)" stroke-width="2.2" marker-end="url(#arr-l)"/>
+
+          <rect x="738" y="42" width="108" height="72" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="792" y="70" text-anchor="middle" font-family="monospace" font-size="11.5" font-weight="800" fill="var(--ok-ink)">200 HTML</text>
+          <text x="792" y="90" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">Tailwind + Vite</text>
+        </svg>
+        <figcaption>
+          <strong>Figure 1:</strong> Loom templates compile into <code>StringTree</code>-returning Gleam functions — zero runtime template parsing and full compiler verification.
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- SECTION 2: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>2. Hands-On Lab (10 minutes)</h2>
+      <p>Run all commands inside <code>lesson-0006/server/</code>.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Ensure this worktree's SQLite DB is migrated</strong><br>
+          Remember: <code>data.db</code> is gitignored per worktree, so run migrate once in <code>lesson-0006/server/</code>:
+<pre><code># Inside lesson-0006/server/
+./glimr migrate</code></pre>
+        </li>
+
+        <li>
+          <strong>Create a reusable Loom component <code>src/resources/views/components/grrr_card.loom.html</code></strong><br>
+          Styled with Catppuccin Mocha tokens from <code>DESIGN.md</code> (<code>#181825</code> mantle, <code>#313244</code> surface0, <code>#cdd6f4</code> text, <code>#f5c2e7</code> Gleam pink):
+<pre><code>---
+import database/main/models/grrr/gen/grrr.{type Grrr}
+
+props(grrr: Grrr)
+---
+
+&lt;article class="rounded-xl border border-[#45475a] bg-[#181825] p-4 shadow-md"&gt;
+  &lt;div class="flex items-center justify-between gap-3 text-sm"&gt;
+    &lt;span class="font-mono font-bold text-[#f5c2e7]"&gt;{{ grrr.author_handle }}&lt;/span&gt;
+    &lt;time class="font-mono text-xs text-[#b4bcd8]"&gt;{{ grrr.created_at }}&lt;/time&gt;
+  &lt;/div&gt;
+  &lt;p class="mt-2 text-[#cdd6f4] leading-relaxed"&gt;{{ grrr.body }}&lt;/p&gt;
+  &lt;div class="mt-3 text-xs font-mono text-[#89b4fa]"&gt;uuid: {{ grrr.uuid }}&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+        </li>
+
+        <li>
+          <strong>Create the Admin Timeline view <code>src/resources/views/admin/grrrs.loom.html</code></strong>
+<pre><code>---
+import database/main/models/grrr/gen/grrr.{type Grrr}
+import gleam/int
+import gleam/list
+
+props(grrrs: List(Grrr))
+---
+
+&lt;x-layouts:app&gt;
+  &lt;slot name="meta_title"&gt;grrr Admin · Moderation Feed&lt;/slot&gt;
+
+  &lt;div class="min-h-screen bg-[#1e1e2e] text-[#cdd6f4] py-10 px-4"&gt;
+    &lt;div class="max-w-3xl mx-auto"&gt;
+      &lt;header class="flex items-center justify-between border-b border-[#45475a] pb-4 mb-6"&gt;
+        &lt;div&gt;
+          &lt;p class="text-xs font-bold uppercase tracking-widest text-[#f5c2e7]"&gt;Glimr + Loom Admin&lt;/p&gt;
+          &lt;h1 class="text-2xl font-extrabold"&gt;grrr Moderation Feed&lt;/h1&gt;
+        &lt;/div&gt;
+        &lt;span class="rounded-full border border-[#89b4fa] bg-[#313244] px-3 py-1 text-xs font-mono font-bold text-[#a3c6ff]"&gt;
+          {{ int.to_string(list.length(grrrs)) }} grrrs
+        &lt;/span&gt;
+      &lt;/header&gt;
+
+      &lt;div l-if="list.is_empty(grrrs)" class="rounded-xl border border-[#45475a] bg-[#181825] p-6 text-center text-[#b4bcd8]"&gt;
+        No grrrs persisted yet. Post one via &lt;code class="text-[#a6e3a1]"&gt;POST /api/grrrs&lt;/code&gt; and refresh!
+      &lt;/div&gt;
+
+      &lt;div l-else class="space-y-4"&gt;
+        &lt;x-grrr_card l-for="item in grrrs" :grrr="item" /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/x-layouts:app&gt;</code></pre>
+        </li>
+
+        <li>
+          <strong>Create the Admin controller <code>src/app/http/controllers/admin/grrrs_controller.gleam</code></strong>
+<pre><code>import app/app.{type App}
+import compiled/loom/admin/grrrs as grrrs_view
+import database/main/models/grrr/gen/grrr
+import glimr/http/context.{type Context}
+import glimr/http/response.{type Response}
+
+/// Render the Loom Admin Moderation Feed.
+///
+/// @get "/admin/grrrs"
+///
+pub fn index(ctx: Context(App)) -&gt; Response {
+  use items &lt;- grrr.list_recent_or_fail(ctx.app.db)
+
+  grrrs_view.render(grrrs: items)
+  |&gt; response.string_tree(200)
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Boot <code>./glimr run</code>, post a Grrr, and open the Admin Portal!</strong>
+<pre><code># 1. Start Glimr + Vite
+./glimr run
+
+# 2. In another terminal, post a sample Grrr:
+curl -s -X POST http://localhost:8000/api/grrrs \
+  -H "Content-Type: application/json" \
+  -d '{"author":"@bear_admin","body":"Hello Loom Admin Portal! 🐻"}' | jq .</code></pre>
+          Now visit <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a> (or your custom <code>APP_PORT</code>) in your browser!
+        </li>
+      </ol>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0006 Win Condition</p>
+        <p>
+          <code>GET /admin/grrrs</code> renders your type-checked Loom Admin Portal styled in Catppuccin Mocha, displaying persisted Grrrs via <code>&lt;x-grrr_card /&gt;</code>! Next in <strong>Lesson 0007</strong>: adding admin moderation actions (<code>DELETE</code> with Loom forms + flash messages) and starting our <strong>Lustre SPA</strong> in <code>client/</code>!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
+      <h2>3. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">What happens if you pass a wrong prop type to a Loom component like <code>&lt;x-grrr_card /&gt;</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Loom compiles templates to Gleam code, catching prop mismatches before runtime.">Loom casts the value at runtime.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Loom compiles `.loom.html` into typed Gleam modules in `src/compiled/loom/`, so mismatches fail at compile time.">The Gleam compiler rejects the build.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Components never silently drop required props.">Loom renders an empty fallback card.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Validation is static at compile time, not deferred to browser JS.">Vite throws a browser console warning.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Why must <code>import gleam/list</code> be declared in a Loom template's <code>---</code> frontmatter?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Loom compiles to Gleam on the BEAM, not browser JavaScript.">Vite bundles gleam/list into client JS.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`list.length` is a pure Gleam function, unrelated to SQLite.">SQLite queries require gleam/list imports.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! Loom compiles the template into a real Gleam module, so any module used in `l-if` or `{{ }}` must be imported.">Compiled Gleam templates need explicit imports.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Frontmatter imports are for Gleam modules, not Tailwind CSS.">Tailwind scans frontmatter for utility classes.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">How does a Loom layout expose named insertion points like <code>meta_title</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Layouts declare `<slot name=&quot;meta_title&quot; />` and callers pass `<slot name=&quot;meta_title&quot;>...</slot>`.">Using named slot elements in layouts.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="PHP `@section` / `@yield` directives belong to Laravel Blade, not Loom.">Using Blade section and yield directives.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Title slots are compiled statically inside Loom, not mutated via `document.title` in JS.">Using inline JavaScript document title mutations.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="`config/app.toml` sets the global app name, not per-page view titles.">Using global keys inside app.toml config.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">What is the difference between <code>{{ value }}</code> and <code>{{{ value }}}</code> in Loom?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Both work on server-rendered Gleam values; triple braces control HTML escaping.">Triple braces execute client-side JavaScript.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Loops use the `l-for` attribute, not triple braces.">Triple braces iterate over Gleam lists.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Conditionals use `l-if` and `l-else`, not triple braces.">Triple braces mark optional nullable props.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Exactly! `{{ ... }}` HTML-escapes strings safely (preventing XSS), while `{{{ ... }}}` outputs raw HTML (used for `vite.tags(...)`).">Double braces escape; triple output raw.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Where do reusable Loom components like <code>&lt;x-grrr_card /&gt;</code> live?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="`shared/` holds dual-target domain logic, not server-only Loom HTML templates.">Inside shared/src/grrr/components/.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Components live in `src/resources/views/components/` and map to `<x-name />` tags.">Inside src/resources/views/components/.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="`priv/static/` holds built Vite CSS/JS bundles, not `.loom.html` source files.">Inside priv/static/components/.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="`src/compiled/loom/` holds Glimr's auto-generated `.gleam` output, never hand-edited templates.">Inside src/compiled/loom/components/.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">Which response helper renders a compiled Loom <code>StringTree</code> with status 200?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="`response.json` expects a `gleam/json.Json` value and sets `application/json`.">Pipe render into response.json(200).</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`wisp.ok` does not exist with that signature; Glimr controllers use `glimr/http/response`.">Pipe render into wisp.ok(200).</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! `grrrs_view.render(grrrs: items) |> response.string_tree(200)` streams the HTML `StringTree` cleanly.">Pipe render into response.string_tree(200).</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Vite only bundles CSS/TS assets; it does not send HTTP responses.">Pipe render into vite.tags(200).</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">How do you pass a typed Gleam value (not a literal string) to a Loom component attribute?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Prefixing with `:` (`:grrr=&quot;item&quot;`) evaluates `item` as a Gleam expression.">Prefix attribute name with a colon.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Dollar signs are used for SQL placeholders (`$1`), not Loom component props.">Prefix attribute name with a dollar.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Double braces interpolate text inside HTML content; component props use `:prop=&quot;expr&quot;`.">Wrap the value in triple braces.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Loom compiles props statically without JSON serialization.">Serialize the value into JSON strings.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">Why run <code>./glimr migrate</code> right after switching into a fresh lesson worktree?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Hex packages are installed by `setup-worktree.sh` via `gleam deps download`.">It downloads missing Hex dependencies.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Bun installs JS packages from `bun.lock`; `./glimr migrate` applies SQLite DDL.">It installs Vite and Tailwind packages.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Git worktree creation is handled by `git worktree add` or `wt switch`.">It creates a new Git worktree.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Exactly! `data.db` is gitignored per worktree, so `./glimr migrate` creates/updates that worktree's local SQLite tables.">Local data.db is gitignored per worktree.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score>Answered 0 / 4 · Correct 0 / 4</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset &amp; Shuffle</button>
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <div class="footer-grid">
+        <div class="footer-box">
+          <h3>Primary Source Reading</h3>
+          <p>
+            Read <a href="https://github.com/glimr-org/glimr#loom-template-engine" target="_blank" rel="noopener noreferrer">Glimr README: Loom Template Engine</a> for all directives (<code>l-if</code>, <code>l-for</code>, components, slots).
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Community &amp; Wisdom</h3>
+          <p>
+            Share screenshots or ask Loom component questions in the <a href="https://discord.gg/Fm8aMwZ" target="_blank" rel="noopener noreferrer">Gleam Discord Server</a> (<code>#web</code>).
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Ask Your Teacher</h3>
+          <p>
+            Curious how Loom's live reactivity compares to Livewire, or got <code>/admin/grrrs</code> rendering your persisted Grrrs? Ping me in chat!
+          </p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: '.loom.html',   sub: 'Blade-style syntax',   ring: 0, idx: 0, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-loom', snd: 'lustre' },
+        { label: 'props(...)',   sub: 'Typed template API',   ring: 0, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-loom', snd: 'gleam' },
+        { label: '<x-grrr_card>',sub: 'Reusable component',   ring: 0, idx: 2, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',  snd: 'glimr' },
+        { label: '/admin/grrrs', sub: 'Catppuccin Admin UI',  ring: 0, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab',  snd: 'pass' },
+        { label: 'l-for / l-if', sub: 'Typed control flow',   ring: 1, idx: 0, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-loom', snd: 'gleam' },
+        { label: 'slots',        sub: 'x-layouts:app',        ring: 1, idx: 1, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',  snd: 'glimr' },
+        { label: 'StringTree',   sub: 'Zero-copy BEAM HTML',  ring: 1, idx: 2, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-loom', snd: 'beam' },
+        { label: 'Tailwind v4',  sub: 'Bun + Vite HMR',       ring: 1, idx: 3, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-lab',  snd: 'lustre' }
+      ]);
+    }
+
+    const TPL = {
+      loom: {
+        code: `---\nimport database/main/models/grrr/gen/grrr.{type Grrr}\nprops(grrrs: List(Grrr))\n---\n<x-layouts:app>\n  <slot name="meta_title">grrr Admin</slot>\n  <p l-if="list.is_empty(grrrs)">No grrrs yet.</p>\n  <div l-else class="space-y-3">\n    <x-grrr_card l-for="item in grrrs" :grrr="item" />\n  </div>\n</x-layouts:app>`,
+        note: '<strong>Loom (compile-time typed):</strong> Frontmatter declares <code>import</code>s and <code>props(...)</code>. <code>:grrr="item"</code> passes a typed Gleam <code>Grrr</code> struct to <code>&lt;x-grrr_card /&gt;</code> — zero runtime array lookups.'
+      },
+      blade: {
+        code: `<x-layouts.app title="grrr Admin">\n  @if ($grrrs->isEmpty())\n    <p>No grrrs yet.</p>\n  @else\n    <div class="space-y-3">\n      @foreach ($grrrs as $item)\n        <x-grrr-card :grrr="$item" />\n      @endforeach\n    </div>\n  @endif\n</x-layouts.app>`,
+        note: '<strong>Laravel Blade (runtime dynamic):</strong> Identical ergonomics, but typos like <code>$item->bdy</code> or missing props are only caught at runtime when that view renders.'
+      }
+    };
+    const tCode = document.getElementById('tpl-code');
+    const tNote = document.getElementById('tpl-note');
+    document.querySelectorAll('[data-tpl]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const v = TPL[btn.dataset.tpl];
+        document.querySelectorAll('[data-tpl]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        tCode.textContent = v.code;
+        tNote.innerHTML = v.note;
+        if (window.GrrrSFX) window.GrrrSFX.click();
+      });
+    });
+  });
+  </script>
+</body>
+</html>
