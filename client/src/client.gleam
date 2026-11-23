@@ -1,24 +1,30 @@
+import gleam/dynamic/decode
 import gleam/int
+import gleam/json
 import gleam/list
 import gleam/string
 import grrr/handle
-import grrr/post.{type DraftError, Empty, InvalidBody, InvalidHandle, TooLong}
+import grrr/post.{
+  type DraftError, type DraftGrrr, Empty, InvalidBody, InvalidHandle, TooLong,
+}
 import lustre
-import lustre/attribute.{class, placeholder, type_, value}
+import lustre/attribute.{class, disabled, placeholder, type_, value}
+import lustre/effect.{type Effect}
 import lustre/element.{type Element, text}
 import lustre/element/html.{
   button, div, form, h1, header, input, li, p, span, textarea, ul,
 }
 import lustre/event
+import rsvp
 
 pub fn main() {
-  let app = lustre.simple(init, update, view)
+  let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
   Nil
 }
 
 pub type PostedGrrr {
-  PostedGrrr(author: String, body: String)
+  PostedGrrr(id: String, author: String, body: String, created_at: String)
 }
 
 pub type Model {
@@ -27,6 +33,8 @@ pub type Model {
     body: String,
     errors: List(String),
     grrrs: List(PostedGrrr),
+    loading: Bool,
+    submitting: Bool,
   )
 }
 
@@ -34,30 +42,99 @@ pub type Msg {
   AuthorChanged(String)
   BodyChanged(String)
   Submitted
+  GrrrsFetched(Result(List(PostedGrrr), rsvp.Error(String)))
+  GrrrPosted(Result(PostedGrrr, rsvp.Error(String)))
 }
 
-fn init(_flags) -> Model {
-  Model(author: "@bear_dev", body: "", errors: [], grrrs: [])
+fn init(_flags) -> #(Model, Effect(Msg)) {
+  let model =
+    Model(
+      author: "@bear_dev",
+      body: "",
+      errors: [],
+      grrrs: [],
+      loading: True,
+      submitting: False,
+    )
+  #(model, fetch_grrrs())
 }
 
-fn update(model: Model, msg: Msg) -> Model {
+fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    AuthorChanged(author) -> Model(..model, author: author, errors: [])
-    BodyChanged(body) -> Model(..model, body: body, errors: [])
-    Submitted ->
-      case post.new_draft_all(model.author, model.body) {
-        Error(errs) -> Model(..model, errors: list.map(errs, format_error))
+    AuthorChanged(author) -> #(
+      Model(..model, author: author, errors: []),
+      effect.none(),
+    )
 
-        Ok(draft) -> {
-          let new_post =
-            PostedGrrr(
-              author: handle.to_string(draft.author),
-              body: post.to_string(draft.body),
+    BodyChanged(body) -> #(
+      Model(..model, body: body, errors: []),
+      effect.none(),
+    )
+
+    Submitted ->
+      case model.submitting {
+        True -> #(model, effect.none())
+        False ->
+          case post.new_draft_all(model.author, model.body) {
+            Error(errs) -> #(
+              Model(..model, errors: list.map(errs, format_error)),
+              effect.none(),
             )
-          Model(..model, body: "", errors: [], grrrs: [new_post, ..model.grrrs])
-        }
+
+            Ok(draft) -> #(
+              Model(..model, errors: [], submitting: True),
+              post_grrr(draft),
+            )
+          }
       }
+
+    GrrrsFetched(Ok(grrrs)) -> #(
+      Model(..model, grrrs: grrrs, loading: False),
+      effect.none(),
+    )
+
+    GrrrsFetched(Error(err)) -> #(
+      Model(..model, loading: False, errors: [format_http_error(err)]),
+      effect.none(),
+    )
+
+    GrrrPosted(Ok(created)) -> #(
+      Model(..model, body: "", errors: [], submitting: False, grrrs: [
+        created,
+        ..model.grrrs
+      ]),
+      effect.none(),
+    )
+
+    GrrrPosted(Error(err)) -> #(
+      Model(..model, submitting: False, errors: [format_http_error(err)]),
+      effect.none(),
+    )
   }
+}
+
+fn fetch_grrrs() -> Effect(Msg) {
+  let decoder =
+    decode.field("grrrs", decode.list(grrr_decoder()), decode.success)
+  rsvp.get("/api/grrrs", rsvp.expect_json(decoder, GrrrsFetched))
+}
+
+fn post_grrr(draft: DraftGrrr) -> Effect(Msg) {
+  let payload =
+    json.object([
+      #("author", json.string(handle.to_string(draft.author))),
+      #("body", json.string(post.to_string(draft.body))),
+    ])
+  let decoder = decode.field("grrr", grrr_decoder(), decode.success)
+  rsvp.post("/api/grrrs", payload, rsvp.expect_json(decoder, GrrrPosted))
+}
+
+fn grrr_decoder() -> decode.Decoder(PostedGrrr) {
+  use id <- decode.field("id", decode.string)
+  use author <- decode.field("author_handle", decode.string)
+  use body <- decode.field("body", decode.string)
+  use created_at <- decode.field("created_at", decode.string)
+  decode.success(PostedGrrr(id:, author:, body:, created_at:))
 }
 
 fn view(model: Model) -> Element(Msg) {
@@ -125,18 +202,28 @@ fn view(model: Model) -> Element(Msg) {
             button(
               [
                 type_("submit"),
+                disabled(model.submitting),
                 class(
-                  "rounded-lg bg-[#89b4fa] px-4 py-2 text-sm font-bold text-[#11111b] cursor-pointer",
+                  "rounded-lg bg-[#89b4fa] px-4 py-2 text-sm font-bold text-[#11111b] cursor-pointer disabled:opacity-50",
                 ),
               ],
               [
-                text("Post Grrr"),
+                text(case model.submitting {
+                  True -> "Posting..."
+                  False -> "Post Grrr"
+                }),
               ],
             ),
           ]),
         ],
       ),
-      div([class("space-y-3")], list.map(model.grrrs, view_grrr)),
+      case model.loading {
+        True ->
+          p([class("text-sm text-[#a6adc8] font-mono")], [
+            text("Loading grrrs from Glimr..."),
+          ])
+        False -> div([class("space-y-3")], list.map(model.grrrs, view_grrr))
+      },
     ]),
   ])
 }
@@ -158,7 +245,12 @@ fn view_errors(errors: List(String)) -> Element(Msg) {
 
 fn view_grrr(item: PostedGrrr) -> Element(Msg) {
   div([class("rounded-xl border border-[#45475a] bg-[#181825] p-4")], [
-    p([class("font-mono text-sm font-bold text-[#f5c2e7]")], [text(item.author)]),
+    div([class("flex items-center justify-between text-xs")], [
+      span([class("font-mono text-sm font-bold text-[#f5c2e7]")], [
+        text(item.author),
+      ]),
+      span([class("font-mono text-[#a6adc8]")], [text(item.created_at)]),
+    ]),
     p([class("mt-1 text-[#cdd6f4]")], [text(item.body)]),
   ])
 }
@@ -174,5 +266,18 @@ fn format_error(err: DraftError) -> String {
     InvalidBody(Empty) -> "Grrr body cannot be empty"
     InvalidBody(TooLong(len, max)) ->
       "Too long: " <> int.to_string(len) <> "/" <> int.to_string(max)
+  }
+}
+
+fn format_http_error(err: rsvp.Error(String)) -> String {
+  case err {
+    rsvp.NetworkError -> "Network error: is Glimr running on port 8000?"
+    rsvp.HttpError(resp) ->
+      "Server returned HTTP " <> int.to_string(resp.status)
+    rsvp.JsonError(_) -> "Could not decode JSON response from server"
+    rsvp.UnhandledResponse(resp) ->
+      "Unexpected response (status " <> int.to_string(resp.status) <> ")"
+    rsvp.BadUrl(url) -> "Invalid URL: " <> url
+    rsvp.BadBody -> "Invalid HTTP response body"
   }
 }

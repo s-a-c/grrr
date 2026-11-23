@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0008: Lustre Application, Managed Effects &amp; rsvp HTTP</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0008</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html">0001</a>
+        <a href="./0002-composing-results-with-use-and-dual-target.html">0002</a>
+        <a href="./0003-booting-glimr-and-wiring-shared.html">0003</a>
+        <a href="./0004-sqlite-schema-migrations-and-typed-queries.html">0004</a>
+        <a href="./0005-post-grrrs-json-decoding-uuidv7-and-422.html">0005</a>
+        <a href="./0006-loom-admin-portal-and-components.html">0006</a>
+        <a href="./0007-lustre-spa-mvu-and-shared-in-browser.html">0007</a>
+        <a href="./0008-lustre-application-effects-and-rsvp.html" aria-current="page">Lesson 0008</a>
+        <a href="../reference/glossary.html">Glossary</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls" role="group" aria-label="Display preferences">
+      <div class="seg-group" role="group" aria-label="Theme">
+        <button type="button" class="seg-btn" data-theme-mode="light" aria-pressed="false">Light</button>
+        <button type="button" class="seg-btn" data-theme-mode="dark" aria-pressed="true">Dark</button>
+        <button type="button" class="seg-btn" data-theme-mode="system" aria-pressed="false">System</button>
+      </div>
+      <button type="button" class="toggle-btn" id="toggle-glow" aria-pressed="true">Glow</button>
+      <button type="button" class="toggle-btn" id="toggle-motion" aria-pressed="true">Motion</button>
+      <button type="button" class="toggle-btn" id="toggle-audio" aria-pressed="true">Audio</button>
+    </div>
+  </header>
+
+  <main id="top" class="page">
+    <!-- HERO WITH 3D ORBITAL STAGE -->
+    <section class="hero reveal">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Lesson 0008 · Full-Stack Loop</span>
+          <h1>Lustre <code>application</code>, Managed <code>Effect</code>s &amp; <code>rsvp</code></h1>
+          <p class="hero-lead">
+            Time to connect your browser SPA to Glimr's SQLite database! Upgrade from <code>lustre.simple</code> to <code>lustre.application</code>, return managed <code>Effect(Msg)</code> values with <code>rsvp</code>, and proxy <code>/api</code> through <code>lustre/dev</code> with zero CORS boilerplate.
+          </p>
+          <div class="badge-row">
+            <span class="domain-badge lustre">▲ lustre.application</span>
+            <span class="domain-badge gleam">◆ Effect(Msg) + rsvp</span>
+            <span class="domain-badge glimr">■ /api Dev Proxy</span>
+            <span class="domain-badge beam">● Full-Stack Persistence</span>
+          </div>
+        </div>
+
+        <div class="orbit-stage" aria-label="Interactive 3D overview of Lustre Effect loop">
+          <div class="orbit-ring r1"></div>
+          <div class="orbit-ring r2"></div>
+          <div class="orbit-core">
+            <strong>Effect(Msg)</strong>
+            <span>Managed Side Effects</span>
+          </div>
+          <div class="orbit-nodes"></div>
+          <div class="orbit-readout">Move cursor to tilt · click any node to jump</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: MANAGED EFFECTS VS REACT USEEFFECT -->
+    <section id="sec-effects" class="reveal">
+      <h2>1. Managed <code>Effect(Msg)</code> vs. React <code>useEffect</code></h2>
+      <p>
+        In Lesson 0007, <code>lustre.simple</code> kept <code>init</code> and <code>update</code> purely in memory. To talk to Glimr's HTTP API without breaking purity, <code>lustre.application(init, update, view)</code> changes their return types to a tuple: <code>#(Model, Effect(Msg))</code>.
+      </p>
+
+      <div class="card-grid">
+        <article class="tilt-card lustre" data-sound="lustre" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3><code>update</code> Stays Pure</h3>
+          </div>
+          <p><strong>vs. React:</strong> No <code>useEffect</code> dependency arrays or stale closures.</p>
+          <p><code>update</code> never calls <code>fetch()</code> directly — it returns a <em>description</em> of the HTTP request (<code>Effect(Msg)</code>), and Lustre's runtime executes it and feeds the result back as a <code>Msg</code>.</p>
+        </article>
+
+        <article class="tilt-card gleam" data-sound="gleam" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3><code>rsvp</code> + <code>gleam_json</code></h3>
+          </div>
+          <p><strong>vs. Axios / fetch:</strong> Typed responses decoded at the edge.</p>
+          <p><code>rsvp.get</code> and <code>rsvp.post</code> build <code>Effect(Msg)</code> values. Paired with <code>rsvp.expect_json(decoder, Msg)</code>, Lustre only delivers your data after status <code>2xx</code>, <code>application/json</code> content-type, and JSON decoding all pass.</p>
+        </article>
+
+        <article class="tilt-card glimr" data-sound="glimr" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>Dev Proxy (<code>/api</code>)</h3>
+          </div>
+          <p><strong>vs. Vite proxy:</strong> Same-origin URLs in dev and prod.</p>
+          <p>Adding <code>[tools.lustre.dev] proxy = { from = "/api", to = "http://localhost:8000/api" }</code> to <code>client/gleam.toml</code> lets <code>lustre/dev</code> forward <code>/api/*</code> to Glimr with zero CORS headers needed.</p>
+        </article>
+      </div>
+
+      <div class="callout lustre">
+        <p class="callout-title">How <code>lustre.application</code> Differs from <code>lustre.simple</code></p>
+        <ul>
+          <li><strong>Tuple return:</strong> Both <code>init(flags) -&gt; #(Model, Effect(Msg))</code> and <code>update(model, msg) -&gt; #(Model, Effect(Msg))</code> return a new model paired with an effect.</li>
+          <li><strong>No-op branches use <code>effect.none()</code>:</strong> Pure UI updates like <code>AuthorChanged</code> or <code>BodyChanged</code> return <code>#(updated_model, effect.none())</code>.</li>
+          <li><strong>Optimistic UI guard:</strong> Keeping <code>submitting: Bool</code> in <code>Model</code> lets <code>Submitted</code> disable the submit button and ignore duplicate submits while the <code>POST /api/grrrs</code> effect is in flight.</li>
+        </ul>
+      </div>
+
+      <!-- INTERACTIVE EFFECTS SIMULATOR -->
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Interactive Effect Loop: Pure <code>update</code> + Async <code>rsvp</code></h3>
+          <div class="sim-controls">
+            <button type="button" class="ctrl-btn" data-eff-step="init">1. init() -&gt; GET /api/grrrs</button>
+            <button type="button" class="ctrl-btn" data-eff-step="post">2. Submitted -&gt; POST /api/grrrs</button>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 840 215" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lustre application Effect(Msg) lifecycle diagram">
+          <defs>
+            <filter id="eff-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <marker id="arr-eff" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--gleam)"/>
+            </marker>
+          </defs>
+
+          <rect x="20" y="54" width="160" height="72" rx="12" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="100" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--lustre-ink)">init / update</text>
+          <text x="100" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">#(Model, Effect)</text>
+
+          <line class="flow-line" x1="180" y1="90" x2="230" y2="90" stroke="var(--gleam)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+
+          <rect x="234" y="54" width="175" height="72" rx="12" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="321" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--gleam-ink)">Lustre Runtime</text>
+          <text x="321" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Runs rsvp fetch()</text>
+
+          <line class="flow-line" x1="409" y1="90" x2="459" y2="90" stroke="var(--gleam)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+
+          <rect x="463" y="54" width="165" height="72" rx="12" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="545" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--glimr-ink)">Glimr /api/grrrs</text>
+          <text x="545" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">SQLite + 200 / 201</text>
+
+          <line class="flow-line" x1="628" y1="90" x2="678" y2="90" stroke="var(--gleam)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+
+          <rect x="682" y="54" width="138" height="72" rx="12" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="751" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--ok-ink)">Result Msg</text>
+          <text x="751" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Ok(...) | Error(...)</text>
+
+          <path class="flow-line" d="M 751 126 L 751 168 L 100 168 L 100 130" fill="none" stroke="var(--ok)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+          <text x="425" y="190" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Lustre dispatches GrrrsFetched / GrrrPosted back into update(model, msg)</text>
+
+          <circle id="eff-pkt" cx="-20" cy="90" r="6.5" fill="var(--lustre)" filter="url(#eff-glow)"/>
+        </svg>
+        <div id="eff-banner" class="sim-result-banner" role="status" aria-live="polite">Click either step above to trace an Effect(Msg) round-trip!</div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>2. Hands-On Lab (15 minutes)</h2>
+      <p>Keep Glimr running in one terminal (<code>server/</code>) and Lustre in a second terminal (<code>client/</code>).</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Add <code>rsvp</code> + <code>gleam_json</code> and configure the <code>/api</code> dev proxy</strong>
+<pre><code># Inside lesson-0008/client/
+gleam add rsvp gleam_json</code></pre>
+          Add the dev proxy to <code>client/gleam.toml</code> so browser requests to <code>/api/...</code> on port <code>1234</code> forward directly to Glimr on port <code>8000</code>:
+<pre><code>[tools.lustre.dev]
+proxy = { from = "/api", to = "http://localhost:8000/api" }</code></pre>
+        </li>
+
+        <li>
+          <strong>Switch <code>client/src/client.gleam</code> to <code>lustre.application</code></strong>
+          Update <code>main</code>, <code>Model</code>, and <code>Msg</code> so <code>init</code> triggers an initial <code>GET /api/grrrs</code> effect and <code>Submitted</code> sends <code>POST /api/grrrs</code> after local <code>shared/</code> validation succeeds:
+<pre><code>pub fn main() {
+  let app = lustre.application(init, update, view)
+  let assert Ok(_) = lustre.start(app, "#app", Nil)
+  Nil
+}
+
+fn init(_flags) -&gt; #(Model, Effect(Msg)) {
+  let model =
+    Model(
+      author: "@bear_dev",
+      body: "",
+      errors: [],
+      grrrs: [],
+      loading: True,
+      submitting: False,
+    )
+  #(model, fetch_grrrs())
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Write the <code>rsvp</code> effects and JSON decoders</strong>
+          Match the exact JSON keys produced by <code>server/src/app/http/controllers/api/grrr_controller.gleam</code> (<code>id</code>, <code>author_handle</code>, <code>body</code>, <code>created_at</code>):
+<pre><code>fn fetch_grrrs() -&gt; Effect(Msg) {
+  let decoder = decode.field("grrrs", decode.list(grrr_decoder()), decode.success)
+  rsvp.get("/api/grrrs", rsvp.expect_json(decoder, GrrrsFetched))
+}
+
+fn post_grrr(draft: DraftGrrr) -&gt; Effect(Msg) {
+  let payload =
+    json.object([
+      #("author", json.string(handle.to_string(draft.author))),
+      #("body", json.string(post.to_string(draft.body))),
+    ])
+  let decoder = decode.field("grrr", grrr_decoder(), decode.success)
+  rsvp.post("/api/grrrs", payload, rsvp.expect_json(decoder, GrrrPosted))
+}
+
+fn grrr_decoder() -&gt; decode.Decoder(PostedGrrr) {
+  use id &lt;- decode.field("id", decode.string)
+  use author &lt;- decode.field("author_handle", decode.string)
+  use body &lt;- decode.field("body", decode.string)
+  use created_at &lt;- decode.field("created_at", decode.string)
+  decode.success(PostedGrrr(id:, author:, body:, created_at:))
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Run Glimr + Lustre side by side and verify persistence!</strong>
+<pre><code># Terminal 1 (lesson-0008/server/):
+./glimr run
+
+# Terminal 2 (lesson-0008/client/):
+gleam run -m lustre/dev start</code></pre>
+          Open <a href="http://localhost:1234" target="_blank" rel="noopener noreferrer">http://localhost:1234</a>, post a Grrr, and **refresh the page** — your Grrr stays in the timeline because it was persisted in SQLite! Then open <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a> to see the exact same Grrr in your Loom Admin Portal.
+        </li>
+      </ol>
+
+      <div class="callout beam">
+        <p class="callout-title">In-Depth: <code>rsvp.expect_json</code> vs. Parsing 422 Field Errors</p>
+        <p>
+          Notice how <code>rsvp.expect_json</code> checks for a <code>2xx</code> status first: any <code>4xx</code> or <code>5xx</code> response becomes <code>Error(rsvp.HttpError(resp))</code> where <code>resp</code> is the full <code>Response(String)</code>. Because <code>shared/post.new_draft_all</code> already caught handle and body validation errors before sending the request, <code>422</code> rarely triggers from the SPA — and if you later want to parse server-side <code>422</code> field errors (such as uniqueness or rate-limit rules), you can swap in <code>rsvp.expect_any_response</code> and inspect <code>resp.status</code> directly.
+        </p>
+      </div>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0008 Win Condition</p>
+        <p>
+          Your Lustre SPA loads real Grrrs from SQLite on boot, validates locally with <code>shared/</code>, posts new Grrrs via <code>rsvp.post</code> through the <code>/api</code> dev proxy, and survives full page reloads — and the exact same posts appear in Glimr's <code>/admin/grrrs</code> portal!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <section id="sec-quiz" class="reveal">
+      <h2>3. Quick Retrieval Check (5 Questions)</h2>
+      <p>Each reload or reset draws 5 randomized questions from an 8-question pool.</p>
+
+      <div class="quiz-box" data-quiz-pool="lesson-0008" data-quiz-count="5">
+        <div class="quiz-pool" hidden>
+          <div class="quiz-q" data-answer="b">
+            <h4>What does upgrading from <code>lustre.simple</code> to <code>lustre.application</code> change?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="Both simple and application pass Model to view(model) -&gt; Element(Msg).">view returns HTML strings instead of Element(Msg).</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! lustre.application changes init and update to return #(Model, Effect(Msg)).">init and update return #(Model, Effect(Msg)).</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="Lustre still runs on the JavaScript target in the browser.">The SPA compiles to Erlang instead of JS.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="Model remains an immutable Gleam value.">Model becomes mutable across components in memory.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="c">
+            <h4>What should <code>update</code> return for a pure UI event like <code>AuthorChanged</code>?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="lustre.application expects a tuple #(Model, Effect(Msg)).">Only the updated Model without any tuple.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="Returning fetch_grrrs() on every keystroke would spam the API.">The fetch_grrrs() HTTP effect on each keystroke.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! effect.none() tells Lustre there is no side effect to run.">The updated Model paired with effect.none().</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="Nil is not a valid return type for update.">Nil so Lustre skips re-rendering the page.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="a">
+            <h4>Why configure <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code>?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Forwarding /api from localhost:1234 to localhost:8000 keeps requests same-origin with zero CORS boilerplate.">Forward /api requests to Glimr without CORS.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="SQLite runs on the Glimr BEAM server, not in the browser.">Bundle SQLite directly inside the browser JS.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="Gleam dependencies still download via Hex.">Replace Hex package resolution during gleam build.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="Loom templates run on Glimr, not inside lustre/dev.">Compile Loom HTML templates inside client/src.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="d">
+            <h4>What three checks does <code>rsvp.expect_json</code> perform before running your decoder?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="rsvp does not inspect SQLite or CSRF tokens.">CSRF token, SQLite lock, and UTF-8 BOM.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="rsvp expects a 2xx status and JSON content-type, not cookies.">Session cookie, CORS origin, and gzip header.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp handles HTTP responses, not WebSocket frames.">WebSocket upgrade, BEAM PID, and HTML body.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! rsvp.expect_json checks 2xx status, application/json content-type, and JSON decoding.">2xx status, application/json header, and JSON decode.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="b">
+            <h4>How does <code>Model.submitting</code> prevent accidental duplicate POST requests?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr does not lock the entire SQLite file for one form.">It locks SQLite tables from the browser.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Submitted ignores repeats while submitting is True, and the button is disabled.">Submitted ignores repeats and disables the button.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="HTTP requests stay asynchronous via Effect(Msg).">It pauses JavaScript execution until 201 returns.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="Clearing the author field would erase the user's handle.">It clears the author handle before every request.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="c">
+            <h4>What <code>rsvp.Error</code> variant is returned when Glimr responds with HTTP 422 or 500 to <code>rsvp.expect_json</code>?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="NetworkError means the browser could not reach the server.">NetworkError because the server rejected the request.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="BadUrl is only returned when parsing the URL string fails.">BadUrl because the endpoint rejected the payload.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Non-2xx (4xx/5xx) responses return HttpError(Response(String)).">HttpError containing the full Response(String) value.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="JsonError only occurs when decoding a 2xx JSON body fails.">JsonError before checking the HTTP status code.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="a">
+            <h4>Why run <code>post.new_draft_all</code> in <code>Submitted</code> before returning <code>post_grrr(draft)</code>?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Invalid input shows instant 0ms errors without wasting an HTTP round-trip.">Give instant 0ms feedback without an HTTP round-trip.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr still validates every request on the server with the same shared/ code.">Skip server-side validation inside grrr_controller.store.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp.post sets content-type: application/json automatically.">Set the application/json header on rsvp.post.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="UUIDv7 IDs are generated on the server inside store.">Generate UUIDv7 primary keys inside the browser.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+
+          <div class="quiz-q" data-answer="d">
+            <h4>Which <code>rsvp</code> handler lets you inspect <code>422</code> JSON bodies directly instead of turning them into <code>HttpError</code>?</h4>
+            <div class="quiz-options">
+              <button type="button" class="quiz-option" data-choice="a" data-explain="expect_text only accepts 2xx text/* responses.">rsvp.expect_text for plain text response bodies.</button>
+              <button type="button" class="quiz-option" data-choice="b" data-explain="expect_ok_response still rejects non-2xx statuses with HttpError.">rsvp.expect_ok_response for any status code.</button>
+              <button type="button" class="quiz-option" data-choice="c" data-explain="effect.none() does not run an HTTP request.">effect.none() paired with decode.run.</button>
+              <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! rsvp.expect_any_response delivers 4xx and 5xx responses as Ok(resp) so you can branch on resp.status.">rsvp.expect_any_response to branch on resp.status.</button>
+            </div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="quiz-questions"></div>
+        <div class="quiz-footer">
+          <div class="quiz-score" aria-live="polite"></div>
+          <button type="button" class="quiz-reset">Reset Quiz</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2>4. Primary Documentation &amp; Community</h2>
+      <ul>
+        <li><a href="https://hexdocs.pm/rsvp/" target="_blank" rel="noopener noreferrer">rsvp HexDocs — HTTP requests &amp; handlers for Lustre</a></li>
+        <li><a href="https://hexdocs.pm/lustre/lustre/effect.html" target="_blank" rel="noopener noreferrer">Lustre Effect module</a></li>
+        <li><a href="https://hexdocs.pm/lustre_dev_tools/" target="_blank" rel="noopener noreferrer">lustre_dev_tools — Dev server &amp; proxy configuration</a></li>
+        <li><a href="https://discord.gg/Fm8Pwmy" target="_blank" rel="noopener noreferrer">Official Gleam Discord</a> · <a href="https://www.reddit.com/r/gleam/" target="_blank" rel="noopener noreferrer">r/gleam</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'application', sub: '#(Model, Effect)',     ring: 0, idx: 0, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-effects', snd: 'lustre' },
+        { label: 'rsvp.get',    sub: 'GET /api/grrrs',       ring: 0, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-effects', snd: 'gleam' },
+        { label: 'rsvp.post',   sub: 'POST /api/grrrs',      ring: 0, idx: 2, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-effects', snd: 'glimr' },
+        { label: 'expect_json', sub: '2xx + decode',         ring: 0, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-effects', snd: 'pass' },
+        { label: '/api proxy',  sub: 'lustre/dev -> :8000',  ring: 1, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',     snd: 'glimr' },
+        { label: 'effect.none', sub: 'Pure UI transitions',  ring: 1, idx: 1, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-effects', snd: 'lustre' },
+        { label: 'submitting',  sub: 'In-flight UI guard',   ring: 1, idx: 2, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab',     snd: 'gleam' },
+        { label: 'SQLite',      sub: 'Survives page reload', ring: 1, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab',     snd: 'pass' }
+      ]);
+    }
+
+    const pkt = document.getElementById('eff-pkt');
+    const banner = document.getElementById('eff-banner');
+    function animateEffect(msgText, isOk) {
+      const pts = [[100, 90], [321, 90], [545, 90], [751, 90], [751, 168], [100, 168], [100, 90]];
+      pkt.setAttribute('fill', isOk ? 'var(--ok)' : 'var(--lustre)');
+      banner.className = 'sim-result-banner is-ok';
+      banner.textContent = msgText;
+      if (!window.GrrrEnv || !window.GrrrEnv.motion) return;
+      const start = performance.now(), dur = 920;
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const segs = pts.length - 1;
+        const sc = t * segs;
+        const i = Math.min(segs - 1, Math.floor(sc));
+        const lt = sc - i;
+        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+        pkt.setAttribute('cx', (x0 + (x1 - x0) * lt).toFixed(1));
+        pkt.setAttribute('cy', (y0 + (y1 - y0) * lt).toFixed(1));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    document.querySelectorAll('[data-eff-step]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sfx = window.GrrrSFX || { lustre() {}, pass() {} };
+        if (btn.dataset.effStep === 'init') {
+          animateEffect('init() returns #(Model(loading: True), rsvp.get("/api/grrrs")) -> Lustre proxies to Glimr -> GrrrsFetched(Ok(grrrs)) updates timeline!', false);
+          sfx.lustre();
+        } else {
+          animateEffect('Submitted validates with shared/ -> sets submitting: True + returns rsvp.post("/api/grrrs", payload) -> GrrrPosted(Ok(created)) prepends to timeline!', true);
+          sfx.pass();
+        }
+      });
+    });
+  });
+  </script>
+</body>
+</html>
