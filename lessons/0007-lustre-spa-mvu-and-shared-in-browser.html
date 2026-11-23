@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0007: Lustre SPA — MVU &amp; Running shared/ in the Browser</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
+        </svg>
+        <span>grrr · Lesson 0007</span>
+      </a>
+      <nav class="nav-links" aria-label="Course navigation">
+        <a href="./0001-domain-model-and-workspace-map.html">0001</a>
+        <a href="./0002-composing-results-with-use-and-dual-target.html">0002</a>
+        <a href="./0003-booting-glimr-and-wiring-shared.html">0003</a>
+        <a href="./0004-sqlite-schema-migrations-and-typed-queries.html">0004</a>
+        <a href="./0005-post-grrrs-json-decoding-uuidv7-and-422.html">0005</a>
+        <a href="./0006-loom-admin-portal-and-components.html">0006</a>
+        <a href="./0007-lustre-spa-mvu-and-shared-in-browser.html" aria-current="page">Lesson 0007</a>
+        <a href="../reference/glossary.html">Glossary</a>
+      </nav>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/4</span>
+      </div>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0007 · User App Frontend (Lustre SPA)</p>
+        <h1>Your First <code>Lustre</code> SPA: MVU &amp; <code>shared/</code> in the Browser</h1>
+        <p class="subtitle">
+          Cross over to the user-facing half of <code>grrr</code>: scaffold <code>client/</code> with <a href="https://hexdocs.pm/lustre/" target="_blank" rel="noopener noreferrer">Lustre</a>, understand Model-View-Update (vs. React hooks), and run your <code>shared/</code> opaque types directly in the browser.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge lustre">▲ Lustre MVU (≈ React)</span>
+          <span class="domain-badge gleam">◇ shared/ in Browser</span>
+          <span class="domain-badge glimr">■ target = "javascript"</span>
+          <span class="domain-badge ok">✓ lustre/dev start</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Worktree:</strong> <code>lesson-0007/</code></span>
+          <span><strong>Win:</strong> Live Lustre Grrr Composer running in browser</span>
+        </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D Lustre MVU constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">Model</div>
+            <div class="prism-face f2">View</div>
+            <div class="prism-face f3">Msg</div>
+            <div class="prism-face f4">Update</div>
+            <div class="prism-face f5">shared</div>
+            <div class="prism-face f6">JS</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: REACT VS LUSTRE MVU -->
+    <section id="sec-mvu" class="reveal">
+      <h2>1. React / Vue vs. Lustre's Model-View-Update (MVU)</h2>
+      <p>
+        In React, state lives inside scattered <code>useState</code> / <code>useReducer</code> hooks and effects inside components. In <strong>Lustre</strong> (inspired by Elm and Erlang/OTP actors), your entire UI is a pure unidirectional loop with four pieces:
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>React (Hooks + Props)</h3>
+<pre><code>function Composer() {
+  const [body, setBody] = useState("");
+  const [err, setErr] = useState(null);
+  // Stale closures, hook ordering rules,
+  // duplicated validation from Laravel...
+  return &lt;textarea value={body}
+    onChange={e =&gt; setBody(e.target.value)} /&gt;;
+}</code></pre>
+          <p><small>State and validation are split across component hooks and TypeScript types drift from PHP.</small></p>
+        </div>
+        <div class="compare-card">
+          <h3>Lustre (Pure MVU + shared/)</h3>
+<pre><code>type Model { Model(author: String, body: String, ...) }
+type Msg { UpdateBody(String), Submit }
+
+fn update(model: Model, msg: Msg) -&gt; Model {
+  case msg {
+    UpdateBody(b) -&gt; Model(..model, body: b)
+    Submit -&gt; // calls shared/post.new_draft_all!
+  }
+}</code></pre>
+          <p><small>One immutable <code>Model</code>, compiler-checked <code>case msg</code>, and identical <code>shared/</code> validation.</small></p>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE MVU LOOP VISUALIZER -->
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Interactive MVU Loop: Step Through a User Action</h3>
+          <div class="sim-controls">
+            <button type="button" class="ctrl-btn" data-mvu-step="type">Simulate: Type "Hello 🐻"</button>
+            <button type="button" class="ctrl-btn" data-mvu-step="submit">Simulate: Click Post</button>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 840 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Model-View-Update unidirectional loop">
+          <defs>
+            <filter id="mvu-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <marker id="arr-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--lustre)"/>
+            </marker>
+          </defs>
+
+          <!-- Model -->
+          <rect x="20" y="54" width="160" height="72" rx="10" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="100" y="82" text-anchor="middle" font-family="monospace" font-size="13" font-weight="800" fill="var(--lustre-ink)">1. Model</text>
+          <text x="100" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Immutable state</text>
+
+          <line class="flow-line" x1="180" y1="90" x2="230" y2="90" stroke="var(--lustre)" stroke-width="2.2" marker-end="url(#arr-m)"/>
+
+          <!-- View -->
+          <rect x="234" y="54" width="160" height="72" rx="10" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="314" y="82" text-anchor="middle" font-family="monospace" font-size="13" font-weight="800" fill="var(--glimr-ink)">2. view(model)</text>
+          <text x="314" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Virtual DOM diff</text>
+
+          <line class="flow-line" x1="394" y1="90" x2="444" y2="90" stroke="var(--lustre)" stroke-width="2.2" marker-end="url(#arr-m)"/>
+
+          <!-- Msg -->
+          <rect x="448" y="54" width="160" height="72" rx="10" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="528" y="82" text-anchor="middle" font-family="monospace" font-size="13" font-weight="800" fill="var(--gleam-ink)">3. Msg</text>
+          <text x="528" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">on_input / on_submit</text>
+
+          <line class="flow-line" x1="608" y1="90" x2="658" y2="90" stroke="var(--lustre)" stroke-width="2.2" marker-end="url(#arr-m)"/>
+
+          <!-- Update -->
+          <rect x="662" y="54" width="160" height="72" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="742" y="82" text-anchor="middle" font-family="monospace" font-size="13" font-weight="800" fill="var(--ok-ink)">4. update()</text>
+          <text x="742" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">Returns next Model</text>
+
+          <!-- Return loop -->
+          <path class="flow-line" d="M 742 126 L 742 162 L 100 162 L 100 128" stroke="var(--lustre)" stroke-width="2" fill="none" marker-end="url(#arr-m)"/>
+
+          <circle id="mvu-pkt" cx="100" cy="90" r="9" fill="var(--lustre)" filter="url(#mvu-glow)"/>
+        </svg>
+
+        <div class="sim-result-banner is-ok" id="mvu-banner" aria-live="polite">
+          Click a button above to watch an event travel through Model → View → Msg → Update → Model!
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>2. Hands-On Lab (10 minutes)</h2>
+      <p>Run all commands from the root of your <code>lesson-0007/</code> worktree.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Scaffold <code>client/</code> and add Lustre + <code>shared/</code></strong>
+<pre><code># From lesson-0007/ worktree root
+gleam new client
+cd client
+gleam add lustre
+gleam add lustre_dev_tools --dev</code></pre>
+        </li>
+
+        <li>
+          <strong>Configure <code>client/gleam.toml</code> for JavaScript + Bun + <code>shared/</code></strong><br>
+          Update <code>client/gleam.toml</code> to target JavaScript, use Bun, align <code>gleam_stdlib</code>, and link <code>../shared</code>:
+<pre><code>name = "client"
+version = "1.0.0"
+target = "javascript"
+
+[dependencies]
+gleam_stdlib = "&gt;= 1.0.0 and &lt; 2.0.0"
+lustre = "&gt;= 5.0.0 and &lt; 6.0.0"
+shared = { path = "../shared" }
+
+[dev-dependencies]
+gleeunit = "&gt;= 1.0.0 and &lt; 2.0.0"
+lustre_dev_tools = "&gt;= 1.0.0 and &lt; 3.0.0"
+
+[javascript]
+runtime = "bun"</code></pre>
+          Then run <code>gleam deps update</code> inside <code>client/</code> so <code>manifest.toml</code> resolves cleanly with <code>shared/</code>.
+        </li>
+
+        <li>
+          <strong>Build your MVU Grrr Composer in <code>client/src/client.gleam</code></strong><br>
+          Notice how the browser app directly imports <code>grrr/handle</code> and <code>grrr/post</code> from <code>shared/</code> — giving you an instant Unicode grapheme counter and identical validation before we even wire HTTP in Lesson 0008!
+<pre><code>import gleam/int
+import gleam/list
+import gleam/string
+import grrr/handle
+import grrr/post.{type DraftError, Empty, InvalidBody, InvalidHandle, TooLong}
+import lustre
+import lustre/attribute.{class, placeholder, type_, value}
+import lustre/element.{type Element, text}
+import lustre/element/html.{button, div, form, h1, header, input, li, p, span, textarea, ul}
+import lustre/event
+
+pub fn main() {
+  let app = lustre.simple(init, update, view)
+  let assert Ok(_) = lustre.start(app, "#app", Nil)
+  Nil
+}
+
+pub type PostedGrrr {
+  PostedGrrr(author: String, body: String)
+}
+
+pub type Model {
+  Model(
+    author: String,
+    body: String,
+    errors: List(String),
+    grrrs: List(PostedGrrr),
+  )
+}
+
+pub type Msg {
+  AuthorChanged(String)
+  BodyChanged(String)
+  Submitted
+}
+
+fn init(_flags) -> Model {
+  Model(author: "@bear_dev", body: "", errors: [], grrrs: [])
+}
+
+fn update(model: Model, msg: Msg) -> Model {
+  case msg {
+    AuthorChanged(author) -> Model(..model, author: author, errors: [])
+    BodyChanged(body) -> Model(..model, body: body, errors: [])
+    Submitted ->
+      case post.new_draft_all(model.author, model.body) {
+        Error(errs) ->
+          Model(..model, errors: list.map(errs, format_error))
+
+        Ok(draft) -> {
+          let new_post =
+            PostedGrrr(
+              author: handle.to_string(draft.author),
+              body: post.to_string(draft.body),
+            )
+          Model(
+            ..model,
+            body: "",
+            errors: [],
+            grrrs: [new_post, ..model.grrrs],
+          )
+        }
+      }
+  }
+}
+
+fn view(model: Model) -> Element(Msg) {
+  let remaining = post.max_body_length - string.length(string.trim(model.body))
+  let counter_color = case remaining &lt; 0 {
+    True -> "text-[#f38ba8]"
+    False -> "text-[#94e2d5]"
+  }
+
+  div([class("min-h-screen bg-[#1e1e2e] text-[#cdd6f4] py-10 px-4 font-sans")], [
+    div([class("max-w-2xl mx-auto space-y-6")], [
+      header([class("flex items-center justify-between border-b border-[#45475a] pb-4")], [
+        h1([class("text-2xl font-extrabold text-[#cba6f7]")], [text("grrr · Lustre SPA")]),
+        span([class("rounded-full border border-[#89b4fa] bg-[#313244] px-3 py-1 text-xs font-mono")], [
+          text(int.to_string(list.length(model.grrrs)) &lt;&gt; " grrrs"),
+        ]),
+      ]),
+      form([event.on_submit(fn(_) { Submitted }), class("rounded-xl border border-[#45475a] bg-[#181825] p-5 space-y-4")], [
+        input([
+          type_("text"),
+          value(model.author),
+          event.on_input(AuthorChanged),
+          placeholder("@handle"),
+          class("w-full rounded-lg border border-[#45475a] bg-[#11111b] px-3 py-2 font-mono text-sm text-[#f5c2e7]"),
+        ]),
+        textarea([
+          value(model.body),
+          event.on_input(BodyChanged),
+          placeholder("What's happening on the BEAM?"),
+          class("w-full rounded-lg border border-[#45475a] bg-[#11111b] px-3 py-2 text-sm"),
+        ], ""),
+        view_errors(model.errors),
+        div([class("flex items-center justify-between")], [
+          span([class("font-mono text-xs font-bold " &lt;&gt; counter_color)], [
+            text(int.to_string(remaining) &lt;&gt; " chars left"),
+          ]),
+          button([type_("submit"), class("rounded-lg bg-[#89b4fa] px-4 py-2 text-sm font-bold text-[#11111b] cursor-pointer")], [
+            text("Post Grrr"),
+          ]),
+        ]),
+      ]),
+      div([class("space-y-3")], list.map(model.grrrs, view_grrr)),
+    ]),
+  ])
+}
+
+fn view_errors(errors: List(String)) -> Element(Msg) {
+  case errors {
+    [] -> element.none()
+    _ ->
+      ul(
+        [class("rounded-lg border border-[#f38ba8] bg-[#f38ba8]/10 p-3 text-xs text-[#f38ba8] list-disc pl-6")],
+        list.map(errors, fn(err) { li([], [text(err)]) }),
+      )
+  }
+}
+
+fn view_grrr(item: PostedGrrr) -> Element(Msg) {
+  div([class("rounded-xl border border-[#45475a] bg-[#181825] p-4")], [
+    p([class("font-mono text-sm font-bold text-[#f5c2e7]")], [text(item.author)]),
+    p([class("mt-1 text-[#cdd6f4]")], [text(item.body)]),
+  ])
+}
+
+fn format_error(err: DraftError) -> String {
+  case err {
+    InvalidHandle(handle.TooShort(_, min)) ->
+      "Handle must be at least " &lt;&gt; int.to_string(min) &lt;&gt; " chars"
+    InvalidHandle(handle.TooLong(_, max)) ->
+      "Handle must be at most " &lt;&gt; int.to_string(max) &lt;&gt; " chars"
+    InvalidHandle(handle.InvalidChars) ->
+      "Handle may only use letters, numbers, and underscores"
+    InvalidBody(Empty) -> "Grrr body cannot be empty"
+    InvalidBody(TooLong(len, max)) ->
+      "Too long: " &lt;&gt; int.to_string(len) &lt;&gt; "/" &lt;&gt; int.to_string(max)
+  }
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Start the Lustre dev server and test in your browser!</strong>
+<pre><code># Inside lesson-0007/client/
+gleam run -m lustre/dev start</code></pre>
+          Open the URL printed by <code>lustre/dev</code> (usually <code>http://localhost:1234</code>). Try typing emojis (<code>🐻</code>) to see the Unicode grapheme counter decrement by 1, submit an empty body + bad handle to see <code>new_draft_all</code> render both errors at once, and post a valid Grrr to watch both the feed <em>and</em> the header badge update immediately!
+        </li>
+      </ol>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0007 Win Condition</p>
+        <p>
+          Your Lustre SPA compiles to JavaScript, runs <code>shared/grrr/post.new_draft_all</code> live in the browser, and updates the composer + timeline + header counter from one immutable <code>Model</code>! Next in <strong>Lesson 0008</strong>: upgrading from <code>lustre.simple</code> to <code>lustre.application</code> with managed <code>Effect</code>s to fetch and post real Grrrs against Glimr's <code>/api/grrrs</code>!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
+      <h2>3. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Why must <code>client/gleam.toml</code> set <code>target = "javascript"</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr runs on the Erlang/BEAM target; Lustre SPAs run in browsers via JavaScript.">Glimr servers only accept JavaScript clients.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Gleam defaults to the Erlang target, whereas a browser Lustre SPA must compile to JS.">Gleam defaults to Erlang without it.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="`gleam.toml` path dependencies work on both targets.">Path dependencies fail on Erlang targets.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Bun runs JS cleanly, and browsers execute the compiled ES module bundle.">Browsers execute Erlang bytecode via Bun.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">What are the four core building blocks of a <code>lustre.simple</code> app?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Controllers, Loom, and SQLite belong to the Glimr server, not Lustre MVU.">Routes, Controllers, Loom, and SQLite.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Lustre has no hooks, refs, or effects arrays.">Hooks, Refs, Context, and Effects.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! `init` builds the initial `Model`, `view` renders `Element(Msg)`, and `update` computes the next `Model`.">Model, Msg, update, and view.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Actors and supervisors live on BEAM/OTP on the server, not in browser Lustre.">Actors, Supervisors, Ports, and ETS.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why did the Lustre header counter (<code>N grrrs</code>) update automatically when a Grrr was posted?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Exactly! Every part of `view(model)` reads from the single immutable `Model`, eliminating cross-component sync bugs.">Both header and list read Model.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="No manual DOM observer is needed in Lustre — `view` is a pure function of `Model`.">A MutationObserver watches DOM article tags.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Lesson 0007 runs locally in the browser; HTTP comes in Lesson 0008.">Glimr pushes updates via Loom WebSocket.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Lustre uses a virtual DOM diff inside Gleam, not localStorage events.">Browser localStorage fires custom storage events.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">How does <code>client.gleam</code> know the maximum Grrr length is 280 without hardcoding it?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="No `/api/health` request is made on startup in Lesson 0007.">It fetches max_body_length from /api/health.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="No JSON config file is read; it's a compile-time constant imported from `shared/`.">It reads a generated JSON config file.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="HTML attributes don't define domain rules; `shared/` does.">It inspects HTML textarea maxlength attributes.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! `shared/grrr/post.max_body_length` is compiled directly into the JS bundle.">It imports post.max_body_length from shared.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">What does <code>Model(..model, body: "")</code> do in <code>update</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Gleam has no mutable fields; record update syntax returns a brand-new `Model`.">It mutates model.body in place.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Record update syntax creates a new immutable `Model` copying all other fields unchanged.">It returns a new Model copy.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="All other fields like `author` and `grrrs` are preserved.">It resets every field on Model.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Record updates are pure values and never trigger HTTP calls.">It posts the cleared body via HTTP.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">What does <code>event.on_submit(fn(_) { Submitted })</code> prevent automatically in Lustre?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="It doesn't disable inputs; it calls `preventDefault()` on the browser form submit.">It disables all form input fields.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="It does not clear `author`; your `update` function controls state.">It clears the author handle input.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Spot on! Lustre's `event.on_submit` calls `preventDefault()` so the browser doesn't reload the page on submit.">Default browser form page reload.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Invalid characters are caught by `post.new_draft_all`, not `on_submit`.">Typing invalid characters into textarea.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why does <code>view(model)</code> return <code>Element(Msg)</code> instead of a raw HTML string?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! `Element(Msg)` statically guarantees every event handler (`on_click`, `on_input`) emits a valid `Msg` variant.">Every UI event must emit Msg.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Browsers render DOM nodes via Lustre's virtual DOM runtime, not `Element(Msg)` directly.">Browsers parse Gleam Element types natively.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Loom templates are server-side; Lustre uses `Element(Msg)` in the browser.">Loom compiles Element into SQLite rows.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="HTML escaping is handled automatically when creating `text(...)` nodes.">Raw HTML strings cannot contain emojis.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">When should you upgrade from <code>lustre.simple</code> to <code>lustre.application</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="`lustre.simple` handles multiple inputs and forms effortlessly.">When adding a second text input.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="CSS styling works identically in `lustre.simple` and `lustre.application`.">When styling cards with Tailwind classes.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="`shared/` pure functions run fine inside `lustre.simple`.">When importing opaque types from shared.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Exactly! `lustre.application` adds `Effect(Msg)` so `init` and `update` can run HTTP requests and WebSocket subscriptions (Lesson 0008).">When running HTTP or WebSocket effects.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score>Answered 0 / 4 · Correct 0 / 4</span>
+        <button type="button" class="ctrl-btn quiz-reset" data-quiz-reset>Reset &amp; Shuffle</button>
+      </div>
+    </section>
+
+    <footer class="lesson-footer">
+      <div class="footer-grid">
+        <div class="footer-box">
+          <h3>Primary Source Reading</h3>
+          <p>
+            Read the official <a href="https://hexdocs.pm/lustre/" target="_blank" rel="noopener noreferrer">Lustre HexDocs Quickstart</a> and <a href="https://github.com/lustre-labs/lustre" target="_blank" rel="noopener noreferrer">lustre-labs/lustre</a> examples.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Community &amp; Wisdom</h3>
+          <p>
+            Ask in the <a href="https://discord.gg/Fm8aMwZ" target="_blank" rel="noopener noreferrer">Gleam Discord Server</a> (<code>#lustre</code>) for SPA component organization and Tailwind tips.
+          </p>
+        </div>
+        <div class="footer-box">
+          <h3>Ask Your Teacher</h3>
+          <p>
+            Curious how <code>lustre.simple</code> compares to React's <code>useReducer</code>, or got your Lustre Grrr Composer running in the browser? Ping me in chat!
+          </p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'Model',       sub: 'Immutable app state',  ring: 0, idx: 0, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-mvu', snd: 'lustre' },
+        { label: 'view(model)', sub: 'Element(Msg) UI',      ring: 0, idx: 1, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-mvu', snd: 'glimr' },
+        { label: 'Msg',         sub: 'Typed UI events',      ring: 0, idx: 2, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-mvu', snd: 'gleam' },
+        { label: 'update()',    sub: 'Pure state transition',ring: 0, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-mvu', snd: 'pass' },
+        { label: 'shared/',     sub: 'new_draft_all in JS',  ring: 1, idx: 0, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab', snd: 'gleam' },
+        { label: 'target = js', sub: 'Bun + browser ESM',    ring: 1, idx: 1, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-lab', snd: 'beam' },
+        { label: 'lustre/dev',  sub: 'Live dev server',      ring: 1, idx: 2, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-lab', snd: 'lustre' },
+        { label: '280 chars',   sub: 'Unicode grapheme UX',  ring: 1, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab', snd: 'pass' }
+      ]);
+    }
+
+    const pkt = document.getElementById('mvu-pkt');
+    const banner = document.getElementById('mvu-banner');
+    function animateLoop(msgText, isOk) {
+      const pts = [[100, 90], [314, 90], [528, 90], [742, 90], [742, 162], [100, 162], [100, 90]];
+      pkt.setAttribute('fill', isOk ? 'var(--ok)' : 'var(--lustre)');
+      banner.className = 'sim-result-banner is-ok';
+      banner.textContent = msgText;
+      if (!window.GrrrEnv || !window.GrrrEnv.motion) return;
+      const start = performance.now(), dur = 880;
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const segs = pts.length - 1;
+        const sc = t * segs;
+        const i = Math.min(segs - 1, Math.floor(sc));
+        const lt = sc - i;
+        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+        pkt.setAttribute('cx', (x0 + (x1 - x0) * lt).toFixed(1));
+        pkt.setAttribute('cy', (y0 + (y1 - y0) * lt).toFixed(1));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    document.querySelectorAll('[data-mvu-step]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sfx = window.GrrrSFX || { lustre() {}, pass() {} };
+        if (btn.dataset.mvuStep === 'type') {
+          animateLoop('Msg: BodyChanged("Hello 🐻") -> update returns Model(..model, body: "Hello 🐻") -> view updates counter to 273!', false);
+          sfx.lustre();
+        } else {
+          animateLoop('Msg: Submitted -> shared/post.new_draft_all succeeds -> update prepends PostedGrrr & clears body -> header & list update together!', true);
+          sfx.pass();
+        }
+      });
+    });
+  });
+  </script>
+</body>
+</html>
