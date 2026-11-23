@@ -81,13 +81,14 @@
           <span class="domain-badge glimr">■ .loom.html Templates</span>
           <span class="domain-badge gleam">◇ props(...) Type-Checked</span>
           <span class="domain-badge lustre">▲ &lt;x-grrr_card /&gt;</span>
+          <span class="domain-badge beam">● l-on:click (/loom/ws)</span>
           <span class="domain-badge ok">✓ GET /admin/grrrs</span>
         </div>
 
         <div class="meta-strip">
-          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Time:</strong> 15 min</span>
           <span><strong>Worktree:</strong> <code>lesson-0006/</code></span>
-          <span><strong>Win:</strong> Live Catppuccin Admin Feed at <code>/admin/grrrs</code></span>
+          <span><strong>Win:</strong> Live Catppuccin Admin Feed + WebSocket Delete at <code>/admin/grrrs</code></span>
         </div>
       </div>
 
@@ -240,7 +241,7 @@ props(grrrs: List(Grrr))
       &lt;/div&gt;
 
       &lt;div l-else class="space-y-4"&gt;
-        &lt;x-grrr_card l-for="item in grrrs" :grrr="item" /&gt;
+        &lt;x-grrr_card l-for="item in grrrs" :grrr="item"&gt;&lt;/x-grrr_card&gt;
       &lt;/div&gt;
     &lt;/div&gt;
   &lt;/div&gt;
@@ -268,22 +269,87 @@ pub fn index(ctx: Context(App)) -&gt; Response {
         </li>
 
         <li>
-          <strong>Boot <code>./glimr run</code>, post a Grrr, and open the Admin Portal!</strong>
+          <strong>Add a Loom Live Moderation Action (<code>l-on:click</code> over <code>/loom/ws</code>)</strong><br>
+          Let's add a two-step live <strong>Delete → Confirm</strong> action to every card with zero page reloads!
+          First, add <code>src/database/main/models/grrr/queries/delete_by_uuid.sql</code> (no trailing <code>;</code>!) and run <code>./glimr db_gen</code>:
+<pre><code>DELETE FROM grrrs WHERE uuid = $1</code></pre>
+          Next, create <code>src/app/actions/admin_actions.gleam</code>:
+<pre><code>import database/main/models/grrr/gen/grrr
+import glimr_sqlite/sqlite
+
+pub fn delete_grrr(uuid: String) -&gt; Bool {
+  let pool = sqlite.start("main")
+  let ok = case grrr.delete_by_uuid(pool, uuid) {
+    Ok(_) -&gt; True
+    Error(_) -&gt; False
+  }
+  ok
+}</code></pre>
+          Now create the live component <code>src/resources/views/components/grrr_actions.loom.html</code>. Notice that its <code>props</code> are primitives (<code>String</code>, <code>Bool</code>) — in Glimr 1.4, Loom Live serializes primitive props into the signed <code>data-l-live</code> WebSocket container:
+<pre><code>---
+import app/actions/admin_actions
+
+props(uuid: String, deleted: Bool, confirming: Bool)
+---
+
+&lt;div class="mt-3 flex items-center justify-between gap-3"&gt;
+  &lt;span class="text-xs font-mono text-[#89b4fa]"&gt;uuid: {{ uuid }}&lt;/span&gt;
+
+  &lt;span l-if="deleted" class="rounded-md bg-[#a6e3a1]/15 border border-[#a6e3a1] px-2.5 py-1 text-xs font-mono font-bold text-[#a6e3a1]"&gt;
+    ✓ Deleted from SQLite
+  &lt;/span&gt;
+
+  &lt;div l-else-if="confirming" class="flex items-center gap-2"&gt;
+    &lt;button
+      type="button"
+      l-on:click="deleted = admin_actions.delete_grrr(uuid)"
+      class="rounded-md bg-[#f38ba8] px-2.5 py-1 text-xs font-bold text-[#11111b] cursor-pointer hover:opacity-90"
+    &gt;
+      Confirm Delete?
+    &lt;/button&gt;
+    &lt;button
+      type="button"
+      l-on:click="confirming = False"
+      class="rounded-md border border-[#6c7086] bg-[#313244] px-2.5 py-1 text-xs font-bold text-[#cdd6f4] cursor-pointer"
+    &gt;
+      Cancel
+    &lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;button
+    l-else
+    type="button"
+    l-on:click="confirming = True"
+    class="rounded-md border border-[#f38ba8]/60 bg-[#313244] px-2.5 py-1 text-xs font-bold text-[#f38ba8] cursor-pointer hover:bg-[#f38ba8]/15"
+  &gt;
+    Delete
+  &lt;/button&gt;
+&lt;/div&gt;</code></pre>
+          Finally, replace the <code>&lt;div class="mt-3 ..."&gt;uuid: {{ grrr.uuid }}&lt;/div&gt;</code> line at the bottom of <code>grrr_card.loom.html</code> with:
+<pre><code>  &lt;x-grrr_actions
+    :uuid="grrr.uuid"
+    :deleted="False"
+    :confirming="False"
+  &gt;&lt;/x-grrr_actions&gt;</code></pre>
+        </li>
+
+        <li>
+          <strong>Boot <code>./glimr run</code>, post a Grrr, and test Live Delete in <code>/admin/grrrs</code>!</strong>
 <pre><code># 1. Start Glimr + Vite
 ./glimr run
 
 # 2. In another terminal, post a sample Grrr:
 curl -s -X POST http://localhost:8000/api/grrrs \
   -H "Content-Type: application/json" \
-  -d '{"author":"@bear_admin","body":"Hello Loom Admin Portal! 🐻"}' | jq .</code></pre>
-          Now visit <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a> (or your custom <code>APP_PORT</code>) in your browser!
+  -d '{"author":"@bear_admin","body":"Hello Loom Live Portal! 🐻"}' | jq .</code></pre>
+          Visit <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a>, click <strong>Delete → Confirm Delete?</strong>, and watch the card update in place over <code>/loom/ws</code> with zero page reload!
         </li>
       </ol>
 
       <div class="callout win">
         <p class="callout-title">Lesson 0006 Win Condition</p>
         <p>
-          <code>GET /admin/grrrs</code> renders your type-checked Loom Admin Portal styled in Catppuccin Mocha, displaying persisted Grrrs via <code>&lt;x-grrr_card /&gt;</code>! Next in <strong>Lesson 0007</strong>: adding admin moderation actions (<code>DELETE</code> with Loom forms + flash messages) and starting our <strong>Lustre SPA</strong> in <code>client/</code>!
+          <code>GET /admin/grrrs</code> renders your type-checked Loom Admin Portal styled in Catppuccin Mocha, and clicking <strong>Delete → Confirm Delete?</strong> mutates SQLite and patches the DOM live over <code>/loom/ws</code>! Next in <strong>Lesson 0007</strong>: scaffolding our <strong>Lustre SPA</strong> in <code>client/</code> and sharing <code>shared/</code> types in the browser!
         </p>
       </div>
     </section>
@@ -291,7 +357,7 @@ curl -s -X POST http://localhost:8000/api/grrrs \
     <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
     <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
       <h2>3. Quick Retrieval Check</h2>
-      <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
+      <p>Answer from memory — each refresh or reset draws 4 random questions from a 10-question pool.</p>
 
       <div class="quiz-card" data-answer="b">
         <p class="quiz-prompt">What happens if you pass a wrong prop type to a Loom component like <code>&lt;x-grrr_card /&gt;</code>?</p>
@@ -377,6 +443,28 @@ curl -s -X POST http://localhost:8000/api/grrrs \
           <button type="button" class="quiz-option" data-choice="b" data-explain="Bun installs JS packages from `bun.lock`; `./glimr migrate` applies SQLite DDL.">It installs Vite and Tailwind packages.</button>
           <button type="button" class="quiz-option" data-choice="c" data-explain="Git worktree creation is handled by `git worktree add` or `wt switch`.">It creates a new Git worktree.</button>
           <button type="button" class="quiz-option" data-choice="d" data-explain="Exactly! `data.db` is gitignored per worktree, so `./glimr migrate` creates/updates that worktree's local SQLite tables.">Local data.db is gitignored per worktree.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">How does a Loom Live component send only changed HTML fragments over <code>/loom/ws</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="PHP snapshots belong to Laravel Livewire; Loom keeps component state inside a BEAM actor.">By posting PHP snapshots via HTTP.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Full page reloads are avoided completely; `@glimr/loom` patches the DOM in place via `morphdom`.">By triggering full browser page reloads.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Loom splits `LiveTree` into `statics` and `dynamics`, sending only changed dynamic indices to `morphdom`.">By diffing LiveTree dynamics with morphdom.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Loom compiles server-side Gleam templates, not React virtual DOM trees.">By running React virtual DOM diffs.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Why did <code>grrr_actions.loom.html</code> accept primitive <code>String</code> and <code>Bool</code> props?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Non-live Loom components (like `grrr_card`) accept full custom records like `Grrr` directly.">All Loom templates forbid custom types.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Spot on! Glimr 1.4's Loom Live `data-l-live` wrapper serializes primitive props (`String`, `Int`, `Float`, `Bool`, and lists of them).">Loom Live serializes primitive prop types.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Gleam supports custom record types natively; the constraint is only in `data-l-live` JSON serialization.">Gleam structs cannot cross module boundaries.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="SQLite has no restriction on Gleam prop types.">SQLite drivers require boolean prop values.</button>
         </div>
         <div class="quiz-feedback" aria-live="polite"></div>
       </div>
