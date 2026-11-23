@@ -8,15 +8,22 @@
 //// https://github.com/glimr-org/glimr?tab=readme-ov-file#direct-pattern-matching
 ////
 
+import app/http/controllers/admin/grrrs_controller as admin_grrrs_controller
 import app/http/controllers/welcome_controller
 import gleam/http.{Get}
 import glimr/http/response
 
-pub fn routes(path, method, _ctx) {
+pub fn routes(path, method, ctx) {
   case path {
     [] ->
       case method {
         Get -> welcome_controller.show()
+        _ -> response.method_not_allowed([Get])
+      }
+
+    ["admin", "grrrs"] ->
+      case method {
+        Get -> admin_grrrs_controller.index(ctx)
         _ -> response.method_not_allowed([Get])
       }
 

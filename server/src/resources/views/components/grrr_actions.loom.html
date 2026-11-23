@@ -1,0 +1,37 @@
+---
+import app/actions/admin_actions
+
+props(uuid: String, deleted: Bool, confirming: Bool)
+---
+
+<div class="mt-3 flex items-center justify-between gap-3">
+  <span class="text-xs font-mono text-[#89b4fa]">uuid: {{ uuid }}</span>
+
+  <span l-if="deleted"
+        class="rounded-md bg-[#a6e3a1]/15 border border-[#a6e3a1] px-2.5 py-1 text-xs font-mono font-bold text-[#a6e3a1]">
+    ✓ Deleted from SQLite
+  </span>
+
+  <div l-else-if="confirming" class="flex items-center gap-2">
+    <button
+            type="button"
+            l-on:click="deleted = admin_actions.delete_grrr(uuid)"
+            class="rounded-md bg-[#f38ba8] px-2.5 py-1 text-xs font-bold text-[#11111b] cursor-pointer hover:opacity-90">
+      Confirm Delete?
+    </button>
+    <button
+            type="button"
+            l-on:click="confirming = False"
+            class="rounded-md border border-[#6c7086] bg-[#313244] px-2.5 py-1 text-xs font-bold text-[#cdd6f4] cursor-pointer">
+      Cancel
+    </button>
+  </div>
+
+  <button
+          l-else
+          type="button"
+          l-on:click="confirming = True"
+          class="rounded-md border border-[#f38ba8]/60 bg-[#313244] px-2.5 py-1 text-xs font-bold text-[#f38ba8] cursor-pointer hover:bg-[#f38ba8]/15">
+    Delete
+  </button>
+</div>

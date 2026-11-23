@@ -98,6 +98,45 @@ pub fn find_or_fail_wc(
   }
 }
 
+pub fn delete_by_uuid(
+  pool pool: db.DbPool,
+  uuid uuid: String,
+) -> Result(Int, db.DbError) {
+  use connection <- db.get_connection(pool)
+  delete_by_uuid_wc(connection: connection, uuid: uuid)
+}
+
+pub fn delete_by_uuid_wc(
+  connection connection: db.Connection,
+  uuid uuid: String,
+) -> Result(Int, db.DbError) {
+  db.exec_with(connection, "DELETE FROM grrrs WHERE uuid = $1", [
+    db.string(uuid),
+  ])
+}
+
+pub fn delete_by_uuid_or_fail(
+  pool pool: db.DbPool,
+  uuid uuid: String,
+  then then: fn(Int) -> Response,
+) -> Response {
+  use connection <- db.get_connection(pool)
+  delete_by_uuid_or_fail_wc(connection: connection, uuid: uuid, then: then)
+}
+
+pub fn delete_by_uuid_or_fail_wc(
+  connection connection: db.Connection,
+  uuid uuid: String,
+  then then: fn(Int) -> Response,
+) -> Response {
+  case delete_by_uuid_wc(connection: connection, uuid: uuid) {
+    Ok(count) -> then(count)
+    Error(db.ConnectionError(_)) -> response.empty(503)
+    Error(db.TimeoutError) -> response.empty(503)
+    Error(_) -> response.internal_server_error()
+  }
+}
+
 pub fn delete(pool pool: db.DbPool, id id: Int) -> Result(Int, db.DbError) {
   use connection <- db.get_connection(pool)
   delete_wc(connection: connection, id: id)
