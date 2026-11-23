@@ -18,6 +18,9 @@
   - Admin portal: Glimr + Loom (with optional Lustre islands)
   - User app: Glimr JSON API + Lustre SPA
   - Live features: live timeline updates + online presence (BEAM/OTP)
+- **Database ID & timestamp conventions:**
+  - **Hybrid ID:** Every table uses `schema.id()` as internal integer PK (keeping Glimr's auto-generated CRUD, `schema.foreign(...)`, and `glimr_auth` intact) paired with `schema.uuid("uuid")` + `schema.unique(["uuid"])` (UUIDv7 generated in Gleam via `youid/uuid.v7_string()`) as the sole public identifier exposed in APIs and URLs.
+  - **Timestamps:** Use `schema.timestamps()` (PostgreSQL `TIMESTAMPTZ` / SQLite `TEXT` ISO-8601 `String`, formatted via `gleam/time/timestamp.to_rfc3339(duration.seconds(0))`) for domain records; reserve `schema.unix_timestamps()` for internal integer TTLs/caches.
 - **Local toolchain:** Verified `gleam 1.19.2`, Erlang `OTP 29`, and `bun` (preferred JS runtime & package manager over Node/npm; `[javascript] runtime = "bun"` in `gleam.toml`, `bun --bun vite` + `deps:refresh` in `package.json`).
 
 - **Git & Worktree Workflow (authorized by user):**

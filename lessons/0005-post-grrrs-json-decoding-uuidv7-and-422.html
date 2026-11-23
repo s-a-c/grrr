@@ -175,41 +175,102 @@
       </figure>
     </section>
 
-    <!-- SECTION 2: HANDS-ON LAB -->
+    <!-- SECTION 2: TIMESTAMPS VS UNIX_TIMESTAMPS -->
+    <section id="sec-timestamps" class="reveal">
+      <h2>2. <code>schema.timestamps()</code> vs. <code>schema.unix_timestamps()</code></h2>
+      <p>
+        In Lesson 0004 we started with <code>schema.unix_timestamps()</code>. Before we build our write path and JSON API responses, let's compare Glimr's two built-in timestamp helpers and switch <code>grrrs</code> to <code>schema.timestamps()</code>:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th><code>schema.timestamps()</code></th>
+            <th><code>schema.unix_timestamps()</code></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SQLite column</strong></td>
+            <td><code>TEXT</code> (ISO 8601 / RFC 3339 string)</td>
+            <td><code>INTEGER</code> (seconds since Unix epoch)</td>
+          </tr>
+          <tr>
+            <td><strong>PostgreSQL column</strong></td>
+            <td><code>TIMESTAMP WITH TIME ZONE</code></td>
+            <td><code>BIGINT</code> (64-bit integer)</td>
+          </tr>
+          <tr>
+            <td><strong>Generated Gleam type</strong></td>
+            <td><code>String</code> (e.g. <code>"2026-11-23T05:30:00Z"</code>)</td>
+            <td><code>Int</code> (e.g. <code>1795411800</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>Glimr / Gleam helper</strong></td>
+            <td><code>gleam/time/timestamp.to_rfc3339</code></td>
+            <td><code>glimr/utils/unix_timestamp.now()</code></td>
+          </tr>
+          <tr>
+            <td><strong>Strengths</strong></td>
+            <td>Human-readable in SQLite &amp; JSON, timezone-aware in Postgres, sub-second precision, standard for REST/Lustre APIs.</td>
+            <td>Compact 8-byte integer, trivial TTL arithmetic (<code>expires_at &gt; now</code>) for sessions &amp; caches.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout beam">
+        <p class="callout-title">Bonus: Watch Glimr's Auto-Migration Diff in Action</p>
+        <p>
+          Because Lesson 0004 already migrated <code>grrrs</code> with <code>unix_timestamps()</code>, swapping to <code>schema.timestamps()</code> and running <code>./glimr db_gen --migrate</code> lets you see Glimr's snapshot differ automatically generate an <code>ALTER</code>/table-rebuild migration and update <code>gen/grrr.gleam</code> from <code>Int</code> to <code>String</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: HANDS-ON LAB -->
     <section id="sec-lab" class="reveal">
-      <h2>2. Hands-On Lab (10 minutes)</h2>
+      <h2>3. Hands-On Lab (10 minutes)</h2>
       <p>Run all commands inside <code>lesson-0005/server/</code>.</p>
 
       <ol class="steps">
         <li>
-          <strong>Add <code>wisp</code> and <code>youid</code> to <code>server/gleam.toml</code></strong><br>
-          <code>wisp</code> is already in your lockfile (adding it makes direct <code>import wisp</code> explicit); <code>youid</code> gives us RFC 9562 <strong>UUIDv7</strong> generation:
+          <strong>Add <code>wisp</code>, <code>youid</code>, and <code>gleam_time</code> to <code>server/gleam.toml</code></strong><br>
+          <code>wisp</code> and <code>gleam_time</code> are already in your lockfile (adding them makes direct imports explicit); <code>youid</code> gives us RFC 9562 <strong>UUIDv7</strong> generation:
 <pre><code># Inside lesson-0005/server/
-gleam add wisp youid</code></pre>
+gleam add wisp youid gleam_time</code></pre>
         </li>
 
         <li>
-          <strong>Update <code>src/database/main/models/grrr/queries/create.sql</code> and regenerate</strong><br>
-          Replace the placeholder <code>create.sql</code> with all 5 columns and run <code>./glimr db_gen</code>:
+          <strong>Switch <code>grrr_schema.gleam</code> to <code>schema.timestamps()</code>, update <code>create.sql</code>, and migrate</strong><br>
+          In <code>src/database/main/models/grrr/grrr_schema.gleam</code>, replace <code>schema.unix_timestamps()</code> with <code>schema.timestamps()</code>:
+<pre><code>  schema.table(table_name, [
+    schema.id(),
+    schema.uuid("uuid"),
+    schema.string("author_handle"),
+    schema.text("body"),
+    schema.timestamps(),
+  ])</code></pre>
+          Replace the placeholder <code>src/database/main/models/grrr/queries/create.sql</code> with all 5 columns:
 <pre><code>INSERT INTO grrrs (uuid, author_handle, body, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5)
 RETURNING *;</code></pre>
+          Then generate the schema diff migration, apply it to SQLite, and regenerate <code>gen/grrr.gleam</code>:
 <pre><code># Inside lesson-0005/server/
 ./glimr db_gen --migrate</code></pre>
-          *(Running with <code>--migrate</code> also ensures this fresh worktree's local <code>data.db</code> has the <code>grrrs</code> table migrated!)*
         </li>
 
         <li>
           <strong>Add <code>POST /api/grrrs</code> to <code>src/app/http/controllers/api/grrr_controller.gleam</code></strong><br>
-          Update <code>grrr_controller.gleam</code> so it handles both <code>GET /api/grrrs</code> and <code>POST /api/grrrs</code>:
+          Update <code>grrr_controller.gleam</code> so it handles both <code>GET /api/grrrs</code> and <code>POST /api/grrrs</code> using ISO-8601 UTC timestamps:
 <pre><code>import app/app.{type App}
 import database/main/models/grrr/gen/grrr.{type Grrr}
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
+import gleam/time/duration
+import gleam/time/timestamp
 import glimr/http/context.{type Context}
 import glimr/http/response.{type Response}
-import glimr/utils/unix_timestamp
 import grrr/handle
 import grrr/post.{type DraftError, Empty, InvalidBody, InvalidHandle, TooLong}
 import wisp
@@ -253,7 +314,9 @@ pub fn store(ctx: Context(App)) -&gt; Response {
           |&gt; response.json(422)
 
         Ok(draft) -&gt; {
-          let now = unix_timestamp.now()
+          let now =
+            timestamp.system_time()
+            |&gt; timestamp.to_rfc3339(duration.seconds(0))
           let id = uuid.v7_string()
 
           use saved &lt;- grrr.create_or_fail(
@@ -277,7 +340,7 @@ fn encode_grrr(item: Grrr) -&gt; json.Json {
     #("id", json.string(item.uuid)),
     #("author_handle", json.string(item.author_handle)),
     #("body", json.string(item.body)),
-    #("created_at", json.int(item.created_at)),
+    #("created_at", json.string(item.created_at)),
   ])
 }
 
@@ -335,9 +398,9 @@ curl -s http://localhost:8000/api/grrrs | jq .</code></pre>
       </div>
     </section>
 
-    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <!-- SECTION 4: RANDOMIZED RETRIEVAL CHECK -->
     <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="4">
-      <h2>3. Quick Retrieval Check</h2>
+      <h2>4. Quick Retrieval Check</h2>
       <p>Answer from memory — each refresh or reset draws 4 random questions from an 8-question pool.</p>
 
       <div class="quiz-card" data-answer="b">
@@ -396,12 +459,12 @@ curl -s http://localhost:8000/api/grrrs | jq .</code></pre>
       </div>
 
       <div class="quiz-card" data-answer="c">
-        <p class="quiz-prompt">Where does <code>unix_timestamp.now()</code> come from in Glimr?</p>
+        <p class="quiz-prompt">How does Glimr's <code>schema.timestamps()</code> differ from <code>schema.unix_timestamps()</code>?</p>
         <div class="quiz-options">
-          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr runs on Erlang/BEAM, not Bun's JS runtime.">From Bun's global Date.now() JavaScript bridge.</button>
-          <button type="button" class="quiz-option" data-choice="b" data-explain="We compute `now` in Gleam and bind it to `$4` and `$5` explicitly.">From SQLite's CURRENT_TIMESTAMP trigger on insert.</button>
-          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Glimr ships `glimr/utils/unix_timestamp.now()` specifically for `schema.unix_timestamps()` columns.">From Glimr's built-in glimr/utils/unix_timestamp module.</button>
-          <button type="button" class="quiz-option" data-choice="d" data-explain="Session cookies have no relation to domain post creation timestamps.">From Wisp's session cookie expiry header.</button>
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Both helpers create `created_at` and `updated_at` columns; `soft_deletes()` creates `deleted_at`.">Only timestamps creates a deleted_at column.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="`timestamps()` maps to `TEXT` (ISO 8601) in SQLite and `TIMESTAMP WITH TIME ZONE` in Postgres.">Only unix_timestamps supports PostgreSQL tables.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! `timestamps()` stores ISO-8601 strings (`TIMESTAMPTZ` / `TEXT`) while `unix_timestamps()` stores integer epoch seconds (`BIGINT` / `INTEGER`).">timestamps uses ISO strings; unix uses integers.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Both helpers are pure schema definitions — your Gleam code supplies the timestamp values on insert/update.">timestamps auto-updates rows without Gleam code.</button>
         </div>
         <div class="quiz-feedback" aria-live="polite"></div>
       </div>
