@@ -1,5 +1,6 @@
 # Gleam / BEAM / JS build outputs
 **/build/
+**/.lustre/
 **/node_modules/
 erl_crash.dump
 
