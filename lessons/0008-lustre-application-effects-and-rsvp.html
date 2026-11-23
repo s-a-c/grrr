@@ -19,7 +19,7 @@
     } catch (_) {}
   })();
   </script>
-  <title>Lesson 0008: Lustre Application, Managed Effects &amp; rsvp HTTP</title>
+  <title>Lesson 0008: Lustre application, Managed Effects &amp; rsvp HTTP</title>
   <link rel="stylesheet" href="../assets/lesson.css">
 </head>
 <body>
@@ -48,150 +48,208 @@
       </nav>
     </div>
 
-    <div class="topbar-controls" role="group" aria-label="Display preferences">
-      <div class="seg-group" role="group" aria-label="Theme">
-        <button type="button" class="seg-btn" data-theme-mode="light" aria-pressed="false">Light</button>
-        <button type="button" class="seg-btn" data-theme-mode="dark" aria-pressed="true">Dark</button>
-        <button type="button" class="seg-btn" data-theme-mode="system" aria-pressed="false">System</button>
+    <div class="topbar-controls">
+      <div class="mastery-pill" title="Quiz mastery for this lesson">
+        <span>Mastery</span>
+        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
+        <span id="mastery-count">0/5</span>
       </div>
-      <button type="button" class="toggle-btn" id="toggle-glow" aria-pressed="true">Glow</button>
-      <button type="button" class="toggle-btn" id="toggle-motion" aria-pressed="true">Motion</button>
-      <button type="button" class="toggle-btn" id="toggle-audio" aria-pressed="true">Audio</button>
+
+      <div class="seg-group" role="group" aria-label="Color theme">
+        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
+        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
+        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
+      </div>
+
+      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
+      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
+      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
+        <span id="sound-label">Audio</span>
+      </button>
     </div>
   </header>
 
-  <main id="top" class="page">
-    <!-- HERO WITH 3D ORBITAL STAGE -->
-    <section class="hero reveal">
-      <div class="hero-grid">
-        <div>
-          <span class="eyebrow">Lesson 0008 · Full-Stack Loop</span>
-          <h1>Lustre <code>application</code>, Managed <code>Effect</code>s &amp; <code>rsvp</code></h1>
-          <p class="hero-lead">
-            Time to connect your browser SPA to Glimr's SQLite database! Upgrade from <code>lustre.simple</code> to <code>lustre.application</code>, return managed <code>Effect(Msg)</code> values with <code>rsvp</code>, and proxy <code>/api</code> through <code>lustre/dev</code> with zero CORS boilerplate.
-          </p>
-          <div class="badge-row">
-            <span class="domain-badge lustre">▲ lustre.application</span>
-            <span class="domain-badge gleam">◆ Effect(Msg) + rsvp</span>
-            <span class="domain-badge glimr">■ /api Dev Proxy</span>
-            <span class="domain-badge beam">● Full-Stack Persistence</span>
-          </div>
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0008 · Full-Stack SPA Persistence</p>
+        <h1>Lustre <code>application</code>, Managed <code>Effect</code>s &amp; <code>rsvp</code></h1>
+        <p class="subtitle">
+          Connect your browser SPA to Glimr's SQLite database: upgrade from <code>lustre.simple</code> to <code>lustre.application</code>, return managed <code>Effect(Msg)</code> values with <a href="https://hexdocs.pm/rsvp/" target="_blank" rel="noopener noreferrer">rsvp</a>, and proxy <code>/api</code> through <code>lustre/dev</code> with zero CORS boilerplate.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge lustre">▲ lustre.application</span>
+          <span class="domain-badge gleam">◇ Effect(Msg) + rsvp</span>
+          <span class="domain-badge glimr">■ /api Dev Proxy</span>
+          <span class="domain-badge ok">✓ SQLite Persistence</span>
         </div>
 
-        <div class="orbit-stage" aria-label="Interactive 3D overview of Lustre Effect loop">
-          <div class="orbit-ring r1"></div>
-          <div class="orbit-ring r2"></div>
-          <div class="orbit-core">
-            <strong>Effect(Msg)</strong>
-            <span>Managed Side Effects</span>
-          </div>
-          <div class="orbit-nodes"></div>
-          <div class="orbit-readout">Move cursor to tilt · click any node to jump</div>
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Worktree:</strong> <code>lesson-0008/</code></span>
+          <span><strong>Win:</strong> Lustre SPA loads &amp; persists Grrrs via Glimr API</span>
         </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D Lustre Effect constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">Effect</div>
+            <div class="prism-face f2">rsvp</div>
+            <div class="prism-face f3">JSON</div>
+            <div class="prism-face f4">Proxy</div>
+            <div class="prism-face f5">Model</div>
+            <div class="prism-face f6">Msg</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
       </div>
     </section>
 
-    <!-- SECTION 1: MANAGED EFFECTS VS REACT USEEFFECT -->
+    <!-- SECTION 1: REACT USEEFFECT VS LUSTRE MANAGED EFFECTS -->
     <section id="sec-effects" class="reveal">
-      <h2>1. Managed <code>Effect(Msg)</code> vs. React <code>useEffect</code></h2>
+      <h2>1. React <code>useEffect</code> vs. Lustre Managed <code>Effect(Msg)</code></h2>
       <p>
         In Lesson 0007, <code>lustre.simple</code> kept <code>init</code> and <code>update</code> purely in memory. To talk to Glimr's HTTP API without breaking purity, <code>lustre.application(init, update, view)</code> changes their return types to a tuple: <code>#(Model, Effect(Msg))</code>.
       </p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>React (<code>useEffect</code> + <code>fetch</code>)</h3>
+<pre><code>useEffect(() =&gt; {
+  let cancelled = false;
+  fetch("/api/grrrs")
+    .then(r =&gt; r.json())
+    .then(d =&gt; { if (!cancelled) setGrrrs(d.grrrs); });
+  return () =&gt; { cancelled = true; };
+}, []); // dependency arrays, races, try/catch...</code></pre>
+          <p><small>Side effects run imperatively inside component lifecycles with manual cancellation and unvalidated JSON.</small></p>
+        </div>
+        <div class="compare-card">
+          <h3>Lustre (<code>application</code> + <code>rsvp</code>)</h3>
+<pre><code>fn init(_flags) -&gt; #(Model, Effect(Msg)) {
+  #(Model(..initial, loading: True), fetch_grrrs())
+}
+
+fn fetch_grrrs() -&gt; Effect(Msg) {
+  let dec = decode.field("grrrs", decode.list(grrr_decoder()), decode.success)
+  rsvp.get("/api/grrrs", rsvp.expect_json(dec, GrrrsFetched))
+}</code></pre>
+          <p><small><code>init</code> and <code>update</code> stay 100% pure — they return data describing the HTTP effect, and Lustre dispatches the decoded <code>Msg</code>.</small></p>
+        </div>
+      </div>
 
       <div class="card-grid">
         <article class="tilt-card lustre" data-sound="lustre" tabindex="0">
           <div class="tilt-sheen"></div>
           <div class="tilt-head">
-            <h3><code>update</code> Stays Pure</h3>
+            <h3><code>#(Model, Effect(Msg))</code></h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--lustre)" stroke-width="1.5" stroke-dasharray="5 5"/>
+              <polygon points="24,11 37,34 11,34" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+            </svg>
           </div>
-          <p><strong>vs. React:</strong> No <code>useEffect</code> dependency arrays or stale closures.</p>
-          <p><code>update</code> never calls <code>fetch()</code> directly — it returns a <em>description</em> of the HTTP request (<code>Effect(Msg)</code>), and Lustre's runtime executes it and feeds the result back as a <code>Msg</code>.</p>
+          <p><strong>Pure transitions:</strong> <code>update</code> never calls <code>fetch()</code> directly; pure branches like <code>AuthorChanged</code> return <code>#(model, effect.none())</code>.</p>
         </article>
 
         <article class="tilt-card gleam" data-sound="gleam" tabindex="0">
           <div class="tilt-sheen"></div>
           <div class="tilt-head">
-            <h3><code>rsvp</code> + <code>gleam_json</code></h3>
+            <h3><code>rsvp.expect_json</code></h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--gleam)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <polygon points="24,10 36,24 24,38 12,24" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+            </svg>
           </div>
-          <p><strong>vs. Axios / fetch:</strong> Typed responses decoded at the edge.</p>
-          <p><code>rsvp.get</code> and <code>rsvp.post</code> build <code>Effect(Msg)</code> values. Paired with <code>rsvp.expect_json(decoder, Msg)</code>, Lustre only delivers your data after status <code>2xx</code>, <code>application/json</code> content-type, and JSON decoding all pass.</p>
+          <p><strong>3-step guard:</strong> Checks <code>2xx</code> status, <code>application/json</code> header, and runs your <code>decode.Decoder</code> before wrapping into <code>Result</code>.</p>
         </article>
 
         <article class="tilt-card glimr" data-sound="glimr" tabindex="0">
           <div class="tilt-sheen"></div>
           <div class="tilt-head">
-            <h3>Dev Proxy (<code>/api</code>)</h3>
+            <h3><code>/api</code> Dev Proxy</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--glimr)" stroke-width="1.5" stroke-dasharray="8 5"/>
+              <rect x="13" y="13" width="22" height="22" rx="5" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+            </svg>
           </div>
-          <p><strong>vs. Vite proxy:</strong> Same-origin URLs in dev and prod.</p>
-          <p>Adding <code>[tools.lustre.dev] proxy = { from = "/api", to = "http://localhost:8000/api" }</code> to <code>client/gleam.toml</code> lets <code>lustre/dev</code> forward <code>/api/*</code> to Glimr with zero CORS headers needed.</p>
+          <p><strong>Zero CORS:</strong> Adding <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code> forwards <code>/api</code> from port <code>1234</code> to Glimr on <code>8000</code>.</p>
         </article>
-      </div>
-
-      <div class="callout lustre">
-        <p class="callout-title">How <code>lustre.application</code> Differs from <code>lustre.simple</code></p>
-        <ul>
-          <li><strong>Tuple return:</strong> Both <code>init(flags) -&gt; #(Model, Effect(Msg))</code> and <code>update(model, msg) -&gt; #(Model, Effect(Msg))</code> return a new model paired with an effect.</li>
-          <li><strong>No-op branches use <code>effect.none()</code>:</strong> Pure UI updates like <code>AuthorChanged</code> or <code>BodyChanged</code> return <code>#(updated_model, effect.none())</code>.</li>
-          <li><strong>Optimistic UI guard:</strong> Keeping <code>submitting: Bool</code> in <code>Model</code> lets <code>Submitted</code> disable the submit button and ignore duplicate submits while the <code>POST /api/grrrs</code> effect is in flight.</li>
-        </ul>
       </div>
 
       <!-- INTERACTIVE EFFECTS SIMULATOR -->
       <div class="instrument">
         <div class="instrument-bar">
-          <h3>Interactive Effect Loop: Pure <code>update</code> + Async <code>rsvp</code></h3>
+          <h3>Interactive Effect Loop: Trace an Async <code>rsvp</code> Round-Trip</h3>
           <div class="sim-controls">
-            <button type="button" class="ctrl-btn" data-eff-step="init">1. init() -&gt; GET /api/grrrs</button>
-            <button type="button" class="ctrl-btn" data-eff-step="post">2. Submitted -&gt; POST /api/grrrs</button>
+            <button type="button" class="ctrl-btn" data-eff-step="init">1. init() → GET /api/grrrs</button>
+            <button type="button" class="ctrl-btn" data-eff-step="post">2. Submitted → POST /api/grrrs</button>
           </div>
         </div>
 
-        <svg viewBox="0 0 840 215" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lustre application Effect(Msg) lifecycle diagram">
+        <svg viewBox="0 0 840 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Lustre application Effect(Msg) lifecycle diagram">
           <defs>
             <filter id="eff-glow" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="4" result="b"/>
+              <feGaussianBlur stdDeviation="4.5" result="b"/>
               <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
             <marker id="arr-eff" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--gleam)"/>
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--lustre)"/>
             </marker>
           </defs>
 
-          <rect x="20" y="54" width="160" height="72" rx="12" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
-          <text x="100" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--lustre-ink)">init / update</text>
-          <text x="100" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">#(Model, Effect)</text>
+          <rect x="20" y="54" width="160" height="72" rx="10" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="100" y="82" text-anchor="middle" font-family="monospace" font-size="12.5" font-weight="800" fill="var(--lustre-ink)">1. init / update</text>
+          <text x="100" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">#(Model, Effect)</text>
 
-          <line class="flow-line" x1="180" y1="90" x2="230" y2="90" stroke="var(--gleam)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+          <line class="flow-line" x1="180" y1="90" x2="230" y2="90" stroke="var(--lustre)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
 
-          <rect x="234" y="54" width="175" height="72" rx="12" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
-          <text x="321" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--gleam-ink)">Lustre Runtime</text>
-          <text x="321" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Runs rsvp fetch()</text>
+          <rect x="234" y="54" width="175" height="72" rx="10" fill="var(--gleam-tint)" stroke="var(--gleam)" stroke-width="2"/>
+          <text x="321" y="82" text-anchor="middle" font-family="monospace" font-size="12.5" font-weight="800" fill="var(--gleam-ink)">2. Lustre Runtime</text>
+          <text x="321" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Runs rsvp fetch()</text>
 
-          <line class="flow-line" x1="409" y1="90" x2="459" y2="90" stroke="var(--gleam)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+          <line class="flow-line" x1="409" y1="90" x2="459" y2="90" stroke="var(--lustre)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
 
-          <rect x="463" y="54" width="165" height="72" rx="12" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
-          <text x="545" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--glimr-ink)">Glimr /api/grrrs</text>
-          <text x="545" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">SQLite + 200 / 201</text>
+          <rect x="463" y="54" width="165" height="72" rx="10" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="545" y="82" text-anchor="middle" font-family="monospace" font-size="12.5" font-weight="800" fill="var(--glimr-ink)">3. Glimr /api</text>
+          <text x="545" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">SQLite + 200 / 201</text>
 
-          <line class="flow-line" x1="628" y1="90" x2="678" y2="90" stroke="var(--gleam)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
+          <line class="flow-line" x1="628" y1="90" x2="678" y2="90" stroke="var(--lustre)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
 
-          <rect x="682" y="54" width="138" height="72" rx="12" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
-          <text x="751" y="84" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--ok-ink)">Result Msg</text>
-          <text x="751" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Ok(...) | Error(...)</text>
+          <rect x="682" y="54" width="138" height="72" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="751" y="82" text-anchor="middle" font-family="monospace" font-size="12.5" font-weight="800" fill="var(--ok-ink)">4. Result Msg</text>
+          <text x="751" y="103" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">Ok(...) | Error(...)</text>
 
-          <path class="flow-line" d="M 751 126 L 751 168 L 100 168 L 100 130" fill="none" stroke="var(--ok)" stroke-width="2.2" marker-end="url(#arr-eff)"/>
-          <text x="425" y="190" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">Lustre dispatches GrrrsFetched / GrrrPosted back into update(model, msg)</text>
+          <path class="flow-line" d="M 751 126 L 751 162 L 100 162 L 100 128" stroke="var(--lustre)" stroke-width="2" fill="none" marker-end="url(#arr-eff)"/>
 
-          <circle id="eff-pkt" cx="-20" cy="90" r="6.5" fill="var(--lustre)" filter="url(#eff-glow)"/>
+          <circle id="eff-pkt" cx="100" cy="90" r="9" fill="var(--lustre)" filter="url(#eff-glow)"/>
         </svg>
-        <div id="eff-banner" class="sim-result-banner" role="status" aria-live="polite">Click either step above to trace an Effect(Msg) round-trip!</div>
+
+        <div class="sim-result-banner is-ok" id="eff-banner" aria-live="polite">
+          Click either button above to trace an Effect(Msg) from init/update through Glimr and back!
+        </div>
+      </div>
+
+      <div class="callout lustre">
+        <p class="callout-title">Key Guarantees in <code>client.gleam</code></p>
+        <ul>
+          <li><strong>Duplicate-submit guard:</strong> <code>Model.submitting</code> disables the submit button and makes <code>Submitted</code> ignore repeat clicks while <code>POST /api/grrrs</code> is in flight.</li>
+          <li><strong>0ms local pre-validation:</strong> <code>Submitted</code> runs <code>shared/post.new_draft_all</code> before dispatching <code>post_grrr(draft)</code>, catching bad handles/bodies without an HTTP round-trip.</li>
+        </ul>
       </div>
     </section>
 
     <!-- SECTION 2: HANDS-ON LAB -->
     <section id="sec-lab" class="reveal">
-      <h2>2. Hands-On Lab (15 minutes)</h2>
-      <p>Keep Glimr running in one terminal (<code>server/</code>) and Lustre in a second terminal (<code>client/</code>).</p>
+      <h2>2. Hands-On Lab (12–15 minutes)</h2>
+      <p>Keep Glimr running in one terminal (<code>server/</code>) and Lustre in a second terminal (<code>client/</code>) inside <code>lesson-0008/</code>.</p>
 
       <ol class="steps">
         <li>
@@ -204,8 +262,8 @@ proxy = { from = "/api", to = "http://localhost:8000/api" }</code></pre>
         </li>
 
         <li>
-          <strong>Switch <code>client/src/client.gleam</code> to <code>lustre.application</code></strong>
-          Update <code>main</code>, <code>Model</code>, and <code>Msg</code> so <code>init</code> triggers an initial <code>GET /api/grrrs</code> effect and <code>Submitted</code> sends <code>POST /api/grrrs</code> after local <code>shared/</code> validation succeeds:
+          <strong>Switch <code>client/src/client.gleam</code> to <code>lustre.application</code></strong><br>
+          Update <code>main</code>, <code>Model</code>, and <code>Msg</code> so <code>init</code> triggers <code>fetch_grrrs()</code> on boot and <code>Submitted</code> sends <code>post_grrr(draft)</code> after <code>shared/</code> validation succeeds:
 <pre><code>pub fn main() {
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
@@ -227,7 +285,7 @@ fn init(_flags) -&gt; #(Model, Effect(Msg)) {
         </li>
 
         <li>
-          <strong>Write the <code>rsvp</code> effects and JSON decoders</strong>
+          <strong>Write the <code>rsvp</code> effects and JSON decoders</strong><br>
           Match the exact JSON keys produced by <code>server/src/app/http/controllers/api/grrr_controller.gleam</code> (<code>id</code>, <code>author_handle</code>, <code>body</code>, <code>created_at</code>):
 <pre><code>fn fetch_grrrs() -&gt; Effect(Msg) {
   let decoder = decode.field("grrrs", decode.list(grrr_decoder()), decode.success)
@@ -260,14 +318,14 @@ fn grrr_decoder() -&gt; decode.Decoder(PostedGrrr) {
 
 # Terminal 2 (lesson-0008/client/):
 gleam run -m lustre/dev start</code></pre>
-          Open <a href="http://localhost:1234" target="_blank" rel="noopener noreferrer">http://localhost:1234</a>, post a Grrr, and **refresh the page** — your Grrr stays in the timeline because it was persisted in SQLite! Then open <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a> to see the exact same Grrr in your Loom Admin Portal.
+          Open <a href="http://localhost:1234" target="_blank" rel="noopener noreferrer">http://localhost:1234</a>, post a Grrr, and <strong>refresh the page</strong> — your Grrr stays in the timeline because it was persisted in SQLite! Then open <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a> to see the exact same Grrr in your Loom Admin Portal.
         </li>
       </ol>
 
       <div class="callout beam">
         <p class="callout-title">In-Depth: <code>rsvp.expect_json</code> vs. Parsing 422 Field Errors</p>
         <p>
-          Notice how <code>rsvp.expect_json</code> checks for a <code>2xx</code> status first: any <code>4xx</code> or <code>5xx</code> response becomes <code>Error(rsvp.HttpError(resp))</code> where <code>resp</code> is the full <code>Response(String)</code>. Because <code>shared/post.new_draft_all</code> already caught handle and body validation errors before sending the request, <code>422</code> rarely triggers from the SPA — and if you later want to parse server-side <code>422</code> field errors (such as uniqueness or rate-limit rules), you can swap in <code>rsvp.expect_any_response</code> and inspect <code>resp.status</code> directly.
+          <code>rsvp.expect_json</code> checks for a <code>2xx</code> status first: any <code>4xx</code> or <code>5xx</code> response becomes <code>Error(rsvp.HttpError(resp))</code> where <code>resp</code> is the full <code>Response(String)</code>. Because <code>shared/post.new_draft_all</code> already caught handle and body validation errors before sending the request, <code>422</code> rarely triggers from the SPA — and if you later want to parse server-side <code>422</code> field errors (such as uniqueness or rate-limit rules), you can swap in <code>rsvp.expect_any_response</code> and branch on <code>resp.status</code> directly.
         </p>
       </div>
 
@@ -413,12 +471,12 @@ gleam run -m lustre/dev start</code></pre>
     const pkt = document.getElementById('eff-pkt');
     const banner = document.getElementById('eff-banner');
     function animateEffect(msgText, isOk) {
-      const pts = [[100, 90], [321, 90], [545, 90], [751, 90], [751, 168], [100, 168], [100, 90]];
+      const pts = [[100, 90], [321, 90], [545, 90], [751, 90], [751, 162], [100, 162], [100, 90]];
       pkt.setAttribute('fill', isOk ? 'var(--ok)' : 'var(--lustre)');
       banner.className = 'sim-result-banner is-ok';
       banner.textContent = msgText;
       if (!window.GrrrEnv || !window.GrrrEnv.motion) return;
-      const start = performance.now(), dur = 920;
+      const start = performance.now(), dur = 880;
       const step = (now) => {
         const t = Math.min(1, (now - start) / dur);
         const segs = pts.length - 1;
