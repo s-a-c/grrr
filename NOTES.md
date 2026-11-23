@@ -14,6 +14,7 @@
   - Author a question pool of **7–13** questions per lesson (`.quiz-pool` with `data-quiz-count` set between **3 and 7** based on lesson depth/length).
   - On page load **and** on **Reset Quiz**, randomly draw `N` questions from the pool and shuffle option order within each question.
   - Keep all 4 options within a question equal in word count with no formatting clues.
+  - **Self-contained grounding:** Every quiz question must be explicitly taught in the lesson body before appearing in the retrieval check.
 - **Architecture split for `grrr`:**
   - Admin portal: Glimr + Loom (with optional Lustre islands)
   - User app: Glimr JSON API + Lustre SPA

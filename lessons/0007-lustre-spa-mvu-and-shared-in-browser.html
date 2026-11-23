@@ -204,6 +204,15 @@ fn update(model: Model, msg: Msg) -&gt; Model {
           Click a button above to watch an event travel through Model → View → Msg → Update → Model!
         </div>
       </div>
+
+      <div class="callout beam">
+        <p class="callout-title"><code>lustre.simple</code> vs. <code>lustre.application</code></p>
+        <ul>
+          <li><strong><code>lustre.simple(init, update, view)</code> (used in Lesson 0007):</strong> Pure in-memory state only. <code>init</code> returns <code>Model</code>, and <code>update</code> returns <code>Model</code>.</li>
+          <li><strong><code>lustre.application(init, update, view)</code> (coming in Lesson 0008):</strong> Returns <code>#(Model, Effect(Msg))</code> from both <code>init</code> and <code>update</code>, allowing managed side effects like HTTP requests (<code>GET /api/grrrs</code>, <code>POST /api/grrrs</code>) and WebSocket subscriptions.</li>
+          <li><strong>Why <code>Element(Msg)</code> &amp; <code>event.on_submit</code>?</strong> Returning <code>Element(Msg)</code> guarantees every event handler emits a valid <code>Msg</code> variant; <code>event.on_submit</code> calls <code>preventDefault()</code> automatically so the browser never reloads the page; and record updates like <code>Model(..model, body: "")</code> return a brand-new immutable <code>Model</code> copy.</li>
+        </ul>
+      </div>
     </section>
 
     <!-- SECTION 2: HANDS-ON LAB -->
@@ -238,7 +247,10 @@ gleeunit = "&gt;= 1.0.0 and &lt; 2.0.0"
 lustre_dev_tools = "&gt;= 1.0.0 and &lt; 3.0.0"
 
 [javascript]
-runtime = "bun"</code></pre>
+runtime = "bun"
+
+[tools.lustre.bin]
+bun = "system"</code></pre>
           Then run <code>gleam deps update</code> inside <code>client/</code> so <code>manifest.toml</code> resolves cleanly with <code>shared/</code>.
         </li>
 
