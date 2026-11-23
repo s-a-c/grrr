@@ -173,6 +173,15 @@
           <strong>Figure 1:</strong> Clean separation of concerns: <code>400</code> catches malformed JSON structure, <code>422</code> returns every domain error from <code>shared/post.new_draft_all</code>, and only proven <code>DraftGrrr</code> values ever reach SQLite.
         </figcaption>
       </figure>
+
+      <div class="callout glimr">
+        <p class="callout-title">Three Write-Boundary Guarantees</p>
+        <ul>
+          <li><strong><code>wisp.require_json</code> pre-check:</strong> Runs before <code>decode.run</code> and short-circuits immediately with <code>415 Unsupported Media Type</code> if <code>Content-Type</code> is not JSON, or <code>400 Bad Request</code> on invalid JSON syntax.</li>
+          <li><strong>Why <code>uuid.v7_string()</code> over auto-increment integers:</strong> UUIDv7 is time-ordered (k-sortable) and generated locally without a database round-trip, while hiding sequential row counts from users.</li>
+          <li><strong>Unwrapping at the DB edge:</strong> Only inside the final persistence call do we unwrap opaque types via <code>handle.to_string(draft.author)</code> and <code>post.to_string(draft.body)</code> into plain SQLite strings.</li>
+        </ul>
+      </div>
     </section>
 
     <!-- SECTION 2: TIMESTAMPS VS UNIX_TIMESTAMPS -->

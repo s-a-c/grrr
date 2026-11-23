@@ -187,6 +187,13 @@ pub fn index(ctx: Context(App)) -&gt; Response {
           <strong>Best for controllers:</strong> Takes <code>ctx.app.db</code> + a continuation. On DB failure, short-circuits directly to a 404/503/500 <code>Response</code> so your happy path stays completely flat.
         </p>
       </div>
+
+      <div class="callout glimr">
+        <p class="callout-title">Transactions (<code>_wc</code>) &amp; In-Memory SQLite Tests</p>
+        <p>
+          The <code>_wc</code> ("with connection") variants take a single database connection inside a <code>db.transaction</code> block rather than checking out a separate pool connection per query. When testing against SQLite <code>:memory:</code>, set <code>DB_POOL_SIZE=1</code> so every query shares the same in-memory database instead of opening independent blank ones.
+        </p>
+      </div>
     </section>
 
     <!-- SECTION 2: HANDS-ON LAB -->

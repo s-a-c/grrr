@@ -179,6 +179,9 @@
         <p id="desugar-note" style="margin-bottom:0;font-size:0.9rem;">
           <strong>Idiomatic <code>use</code>:</strong> Flat, linear, zero rightward drift. The compiler literally rewrites this into the nested callback version.
         </p>
+        <p style="margin-top:0.5rem;margin-bottom:0;font-size:0.88rem;">
+          <strong>Label shorthand &amp; canonicalization:</strong> <code>DraftGrrr(author:, body:)</code> is Gleam's label shorthand for <code>DraftGrrr(author: author, body: body)</code> when local variable names match field labels. And <code>handle.new</code> normalizes input (<code>strip_leading_at</code> + <code>lowercase</code>) so <code>@Bear_Dev</code> and <code>bear_dev</code> map to one canonical handle instead of duplicate accounts.
+        </p>
       </div>
     </section>
 

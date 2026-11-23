@@ -141,6 +141,9 @@ props(grrrs: List(Grrr))
         <p id="tpl-note" style="margin-bottom:0;font-size:0.9rem;">
           <strong>Loom (compile-time typed):</strong> Frontmatter declares <code>import</code>s and <code>props(...)</code>. <code>:grrr="item"</code> passes a typed Gleam <code>Grrr</code> struct to <code>&lt;x-grrr_card /&gt;</code> — zero runtime array lookups.
         </p>
+        <p style="margin-top:0.5rem;margin-bottom:0;font-size:0.88rem;">
+          <strong>Template syntax rules:</strong> Use <code>{{ value }}</code> for HTML-escaped output (safe by default) and triple-mustache <code>{{{ value }}}</code> only when you intentionally need raw unescaped HTML. A colon-prefixed attribute like <code>:grrr="item"</code> or <code>:deleted="False"</code> evaluates a <strong>Gleam expression</strong>, whereas an unprefixed attribute passes a static string literal.
+        </p>
       </div>
 
       <figure class="diagram">
@@ -352,7 +355,7 @@ curl -s -X POST http://localhost:8000/api/grrrs \
           Notice that when you delete a Grrr, the card's action area morphs to <code>✓ Deleted from SQLite</code>, but the <code>N grrrs</code> badge in the page header stays unchanged until you refresh. That reveals an important boundary:
         </p>
         <ul>
-          <li><strong>Isolated <code>data-l-live</code> actors:</strong> Each <code>&lt;x-grrr_actions&gt;</code> runs its own independent BEAM actor with primitive props (<code>uuid</code>, <code>deleted</code>, <code>confirming</code>). The outer <code>admin/grrrs.loom.html</code> page is static HTML, and Glimr 1.4's live prop serializer encodes primitives rather than custom records like <code>List(Grrr)</code>.</li>
+          <li><strong>Isolated <code>data-l-live</code> actors:</strong> Each <code>&lt;x-grrr_actions&gt;</code> runs its own independent BEAM actor with primitive props (<code>uuid</code>, <code>deleted</code>, <code>confirming</code>). On each event over <code>/loom/ws</code>, Loom diffs the server-rendered <code>LiveTree</code> and patches only the changed DOM nodes in place via <code>morphdom</code>. The outer <code>admin/grrrs.loom.html</code> page is static HTML, and Glimr 1.4's live prop serializer encodes primitives rather than custom records like <code>List(Grrr)</code>.</li>
           <li><strong>Mitigation 1 — Lightweight DOM Observer (Admin):</strong> Watch for <code>[data-grrr-deleted]</code> mutations in <code>app.ts</code> to sync the header badge.</li>
           <li><strong>Mitigation 2 — Lustre Island / Lustre SPA (Lesson 0007+):</strong> In Lustre's Model-View-Update loop, the list and every counter read from one shared immutable <code>Model</code>, so deleting or posting updates both automatically.</li>
           <li><strong>Mitigation 3 — BEAM PubSub + WebSocket (Later Lessons):</strong> Broadcast <code>GrrrCreated</code> / <code>GrrrDeleted</code> events from OTP actors so every open browser tab stays in sync in real time.</li>
