@@ -8,13 +8,20 @@
 //// https://github.com/glimr-org/glimr?tab=readme-ov-file#direct-pattern-matching
 ////
 
+import app/http/controllers/api/grrr_controller as api_grrr_controller
 import app/http/controllers/api/health_controller as api_health_controller
 import app/http/controllers/api/welcome_controller as api_welcome_controller
 import gleam/http.{Get}
 import glimr/http/response
 
-pub fn routes(path, method, _ctx) {
+pub fn routes(path, method, ctx) {
   case path {
+    ["api", "grrrs"] ->
+      case method {
+        Get -> api_grrr_controller.index(ctx)
+        _ -> response.method_not_allowed([Get])
+      }
+
     ["api", "health"] ->
       case method {
         Get -> api_health_controller.show()
