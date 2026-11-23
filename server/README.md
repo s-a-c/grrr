@@ -13,20 +13,20 @@ If you'd like to stay updated on Glimr's development, Follow [@migueljarias](htt
 - [Installation](#installation)
 - [Project Structure](#project-structure)
 - [Build Tools](#build-tools)
-    - [Vite & Tailwind](#vite--tailwind)
-    - [Build Command](#build-command)
-    - [Run Command](#run-command)
-    - [Hooks](#hooks)
-    - [Glimr Commands](#glimr-commands)
+  - [Vite & Tailwind](#vite--tailwind)
+  - [Build Command](#build-command)
+  - [Run Command](#run-command)
+  - [Hooks](#hooks)
+  - [Glimr Commands](#glimr-commands)
 - [Routes](#routes)
-    - [Defining Routes](#defining-routes)
-    - [Route Parameters](#route-parameters)
-    - [Redirects](#redirects)
-    - [Route Middleware](#route-middleware)
-    - [Group Middleware](#group-middleware)
-    - [Validators](#validators)
-    - [Route Groups](#route-groups)
-    - [Direct Pattern Matching](#direct-pattern-matching)
+  - [Defining Routes](#defining-routes)
+  - [Route Parameters](#route-parameters)
+  - [Redirects](#redirects)
+  - [Route Middleware](#route-middleware)
+  - [Group Middleware](#group-middleware)
+  - [Validators](#validators)
+  - [Route Groups](#route-groups)
+  - [Direct Pattern Matching](#direct-pattern-matching)
 - [Controllers](#controllers)
 - [Actions](#actions)
 - [Middleware](#middleware)
@@ -56,9 +56,9 @@ If you'd like to stay updated on Glimr's development, Follow [@migueljarias](htt
 - [Loom Template Engine](#loom-template-engine)
 - [Database](#database)
   - [Setup](#setup)
-      - [SQLite](#sqlite)
-      - [PostgreSQL](#postgresql)
-      - [Multiple Databases](#multiple-databases)
+    - [SQLite](#sqlite)
+    - [PostgreSQL](#postgresql)
+    - [Multiple Databases](#multiple-databases)
   - [Migrations](#migrations)
   - [Queries](#queries)
 - [Cache](#cache)
@@ -133,9 +133,9 @@ Configure your environment variables:
 
 ```env
 APP_NAME=Glimr
-APP_PORT=8000
+APP_PORT=4567
 APP_DEBUG=true
-APP_URL=http://localhost:8000
+APP_URL=http://localhost:4567
 APP_KEY=your-secret-key-here
 ```
 
@@ -149,11 +149,11 @@ APP_KEY=your-secret-key-here
 gleam run
 ```
 
-Visit `http://localhost:8000` in your browser.
+Visit `http://localhost:4567` in your browser.
 
 ## Project Structure
 
-```
+```text
 ├── config/                             # Configuration TOML files
 ├── src/
 │   ├── glimr_app.gleam                 # Application entry point
@@ -317,18 +317,18 @@ This automatically compiles routes, Loom templates, console commands, and databa
 
 When running via `./glimr run`, a dev proxy sits in front of your application to provide a seamless development experience. The proxy holds incoming requests during app restarts, so you never see connection errors when the app is recompiling.
 
-```
+```text
 Browser → Proxy (APP_PORT) → App (DEV_PROXY_PORT)
 ```
 
 Configure the ports in your `.env` file:
 
 ```env
-APP_PORT=8000         # Port you access in your browser
+APP_PORT=4567         # Port you access in your browser
 DEV_PROXY_PORT=8001   # Internal port for the app (proxy forwards here)
 ```
 
-Access your app at `http://localhost:8000` (or whatever `APP_PORT` is set to). The proxy handles forwarding to the internal port automatically.
+Access your app at `http://localhost:4567` (or whatever `APP_PORT` is set to). The proxy handles forwarding to the internal port automatically.
 
 In production (when running directly via `gleam run`), there's no proxy—your app listens directly on `APP_PORT`.
 
@@ -341,7 +341,7 @@ Route compilation, Loom template compilation, console command compilation, and d
 #### Available Hooks
 
 | Hook | When it runs |
-|------|--------------|
+| ------ | -------------- |
 | `hooks.build.pre` | Before `./glimr build` compiles |
 | `hooks.build.post` | After `./glimr build` completes |
 | `hooks.run.pre` | Once when `./glimr run` starts |
@@ -405,6 +405,7 @@ pub fn show(ctx: Context(App)) -> Response {
 ```
 
 Available HTTP method annotations:
+
 - `@get "/path"` - GET request
 - `@post "/path"` - POST request
 - `@put "/path"` - PUT request
@@ -473,7 +474,7 @@ Route parameters are strings by default, but if you type a parameter as `Int` in
 pub fn show(ctx: Context(App), id: Int) -> Response {
   // id is already an Int — no manual parsing needed
   use post <- post.find_or_fail(ctx.app.db, id)
-  
+
   post_show.render(post: post)
   |> response.string_tree(200)
 }
@@ -607,12 +608,14 @@ Route groups determine which compiled file your routes end up in and which middl
 ```
 
 Routes are matched to groups by their URL prefix:
+
 - A route `@get "/api/users"` matches the `api` group (prefix `/api`) → compiles to `api.gleam`
 - A route `@get "/dashboard"` matches the `web` group (empty prefix catch-all) → compiles to `web.gleam`
 
 #### API Routes
 
 By default, routes with the `/api` prefix:
+
 - Compile to `src/compiled/routes/api.gleam`
 - Use the `Api` middleware group (JSON error responses)
 - The prefix is configured in `config/route_group.toml`
@@ -657,7 +660,7 @@ Create the route file with this command:
 # Create a route file in compiled/routes/admin.gleam
 ./glimr make_route_file admin
 
-# Create a route file in routes/admin.gleam if you prefer to 
+# Create a route file in routes/admin.gleam if you prefer to
 # use direct pattern matching instead of compiled routing
 ./glimr make_route_file admin --direct
 ```
@@ -813,7 +816,7 @@ This generates a controller with `index`, `show`, `create`, `store`, `edit`, `up
 
 By default, controllers live in `src/app/http/controllers/`. However, if you prefer a domain-driven design structure, Glimr also discovers any file ending in `_controller.gleam` or named `controller.gleam` anywhere under `src/`:
 
-```
+```text
 # Traditional flat structure
 src/app/http/controllers/user_controller.gleam
 src/app/http/controllers/post_controller.gleam
@@ -1031,6 +1034,7 @@ pub fn run(ctx, next) {
 ```
 
 This allows middleware to:
+
 - Add headers to responses (CORS, security headers, etc.)
 - Log response times
 - Compress response bodies
@@ -1192,7 +1196,7 @@ expire_on_close = false
 ```
 
 | Setting | Description |
-|---------|-------------|
+| --------- | ------------- |
 | `table` | Database table name (used by PostgreSQL and SQLite drivers) |
 | `cookie` | Cookie name for the session ID |
 | `lifetime` | Session lifetime in minutes |
@@ -1426,6 +1430,7 @@ pub fn dashboard(ctx: Context(App)) -> Response {
   |> response.string_tree(200)
 }
 ```
+
 And then in your loom file
 
 ```html
@@ -1533,7 +1538,7 @@ When your application needs multiple authenticatable models (e.g. users and cust
 Scoped mode namespaces middleware, controllers, and validators to avoid conflicts:
 
 | File | Unscoped (`make_auth user`) | Scoped (`make_auth customer --scoped`) |
-|------|---------------------------|----------------------------------------|
+| ------ | --------------------------- | ---------------------------------------- |
 | Login validator | `validators/store_login.gleam` | `validators/store_customer_login.gleam` |
 | Register validator | `validators/store_register.gleam` | `validators/store_customer_register.gleam` |
 | Login controller | `controllers/auth/login_controller.gleam` | `controllers/auth/customer_login_controller.gleam` |
@@ -1575,7 +1580,7 @@ import glimr/http/response.{type Response}
 /// @get "/dashboard"
 pub fn show(ctx: Context(App)) -> Response {
   let assert option.Some(user) = ctx.app.user
-  
+
   dashboard.render(ctx: ctx, user: user)
   |> response.string_tree(200)
 }
@@ -1847,7 +1852,7 @@ pub fn middleware() -> List(Middleware(App)) {
 /// @get "/dashboard"
 pub fn show(ctx: Context(App)) -> Response {
   let assert option.Some(user) = ctx.app.user
-  
+
   dashboard.render(ctx: ctx, user: user)
   |> response.string_tree(200)
 }
@@ -2017,6 +2022,7 @@ pub fn store(ctx: Context(App)) -> Response {
 ### Available Validation Rules
 
 **Text & String Rules:**
+
 - **Required** — Field must have a value
 - **Email** — Field must be a valid email address
 - **MinLength(Int)** — Field must be at least n characters
@@ -2037,6 +2043,7 @@ pub fn store(ctx: Context(App)) -> Response {
 - **Ip** — Field must be a valid IP address (IPv4 or IPv6)
 
 **Numeric Rules:**
+
 - **Numeric** — Field must be numeric
 - **Min(Int)** — Numeric field must be at least n
 - **Max(Int)** — Numeric field must be at most n
@@ -2046,12 +2053,14 @@ pub fn store(ctx: Context(App)) -> Response {
 - **MaxDigits(Int)** — Field must have at most n digits
 
 **Database Rules** (available because the `rules` function receives `ctx`):
+
 - **Exists(DbPool, String)** — Field value must exist in the given database table, case-insensitive (e.g., `Exists(ctx.app.db, "users")`)
 - **ExistsSensitive(DbPool, String)** — Same as Exists but case-sensitive, for columns where casing matters (e.g., API keys, tokens)
 - **Unique(DbPool, String)** — Field value must not already exist in the given database table, case-insensitive (e.g., `Unique(ctx.app.db, "users")`)
 - **UniqueSensitive(DbPool, String)** — Same as Unique but case-sensitive, for columns where casing matters
 
 **File Upload Rules:**
+
 - **FileRequired** — File field must have a file uploaded
 - **FileMinSize(Int)** — File must be at least n KB
 - **FileMaxSize(Int)** — File must be at most n KB
@@ -2134,6 +2143,7 @@ fn rules(_ctx) {
 ```
 
 **Custom validation function signature:**
+
 - `fn(String, String, FormData, Context(App)) -> Result(Nil, String)`
 - First argument is the field name
 - Second argument is the field's value
@@ -2204,6 +2214,7 @@ fn rules(_ctx) {
 ```
 
 **Custom file validation function signature:**
+
 - `fn(String, UploadedFile, FormData, Context(App)) -> Result(Nil, String)`
 - First argument is the field name
 - Second argument is the uploaded file
@@ -2237,7 +2248,7 @@ props(ctx: context.Context(App))
 ```
 
 | Helper | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `session.old(session, field)` | Returns the old input value for a field, or `""` if none |
 | `session.error(session, field)` | Returns the first validation error for a field, or `""` if none |
 | `session.has_error(session, field)` | Returns `True` if a validation error exists for a field |
@@ -2300,7 +2311,7 @@ pub fn show(ctx: Context(App)) -> Response {
 
 Glimr automatically renders error pages for any HTTP error status (400, 404, 500, etc.). When a response has a 400+ status code, Glimr intercepts it and renders a clean error page instead of returning a blank response.
 
-For **HTML requests**, Glimr looks for a custom error template at `src/resources/views/errors/{status}.html` (e.g. `errors/404.html`). If no custom template exists, a built-in generic error page is rendered. 
+For **HTML requests**, Glimr looks for a custom error template at `src/resources/views/errors/{status}.html` (e.g. `errors/404.html`). If no custom template exists, a built-in generic error page is rendered.
 
 For **JSON requests**, a `{"error": "Not Found"}` response is returned automatically.
 
@@ -2310,7 +2321,7 @@ This works for all error responses.
 
 To override the default error page for a specific status code, create an HTML file in your views directory:
 
-```
+```text
 src/resources/views/errors/
 ├── 404.html    <- custom "not found" page
 ├── 500.html    <- custom "server error" page
@@ -2338,6 +2349,7 @@ No client-side state management. No full page reloads. The server is the single 
 The simplest Loom template is just HTML:
 
 **home.loom.html**
+
 ```html
 <h1>Hello from Loom</h1>
 <p>This is a simple template.</p>
@@ -2359,6 +2371,7 @@ pub fn show() {
 Now let's make it reactive. Here's a counter with server-driven state:
 
 **counter.loom.html:**
+
 ```html
 ---
 props(count: Int)
@@ -2447,7 +2460,7 @@ props(count: Int, multiplier: Int)
 Handler expressions can reference browser event data via special variables:
 
 | Variable | Description | Available in |
-|----------|-------------|--------------|
+| ---------- | ------------- | -------------- |
 | `$value` | Current value of input/select/textarea (`e.target.value`) | `l-on:input`, `l-on:change` |
 | `$checked` | Checkbox checked state (`e.target.checked`) | `l-on:change` |
 | `$key` | Key pressed (`e.key`) | `l-on:keydown`, `l-on:keyup` |
@@ -2455,8 +2468,8 @@ Handler expressions can reference browser event data via special variables:
 ```html
 ---
 props(
-  name: String, 
-  enabled: Bool, 
+  name: String,
+  enabled: Bool,
   last_key: String
 )
 ---
@@ -2466,7 +2479,7 @@ props(
 <input l-on:keydown="last_key = $key" />
 ```
 
-##### Two-Way Binding (l-model)
+##### Two-Way Binding (L-Model)
 
 `l-model` is syntactic sugar for the common input binding pattern:
 
@@ -2528,7 +2541,7 @@ Modifiers control browser-side event behavior:
 ```
 
 | Modifier | Effect |
-|----------|--------|
+| ---------- | -------- |
 | `.prevent` | Calls `event.preventDefault()` |
 | `.stop` | Calls `event.stopPropagation()` |
 | `.enter` | Only fires on Enter key |
@@ -2666,8 +2679,8 @@ Multiple props are comma-separated:
 ```html
 ---
 props(
-  name: String, 
-  age: Int, 
+  name: String,
+  age: Int,
   is_admin: Bool
 )
 ---
@@ -2749,6 +2762,7 @@ To output literal `{{` or `{{{` on the page, prefix with a backslash:
 ##### Imports
 
 Use the `import` declaration in the frontmatter block to import modules into your template. Imports are needed for:
+
 - Custom types referenced in `props()`
 - Module functions used in expressions (`{{ }}`, `{{{ }}}`)
 - Module functions used in conditions (`l-if`, `l-else-if`)
@@ -2894,7 +2908,7 @@ props(items: List(Item))
 <p l-else>Many items</p>
 ```
 
-##### Conditional Visibility (l-show)
+##### Conditional Visibility (L-Show)
 
 `l-show` hides an element without removing it from the DOM. Unlike `l-if` which removes the element entirely, `l-show` toggles `display: none`:
 
@@ -2911,7 +2925,7 @@ When the condition is false, the element renders with `style="display: none"`. W
 ```
 
 | | `l-if` | `l-show` |
-|---|---|---|
+| --- | --- | --- |
 | DOM behavior | Removes/adds element entirely | Toggles `display: none` |
 | Toggle cost | Higher (full subtree diff) | Lower (style change only) |
 | Use when... | Branches are rarely toggled | Elements toggle frequently |
@@ -2933,6 +2947,7 @@ Use `:class` and `:style` to conditionally apply CSS classes and inline styles:
 ```
 
 Each item is either:
+
 - A static string that's always applied (e.g., `'btn primary'`)
 - A conditional tuple `#(String, Bool)` where the string is applied only if the condition is `True`
 
@@ -3033,7 +3048,7 @@ When you need access to loop metadata (like the current index or whether it's th
 The loop variable provides these properties:
 
 | Property | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `loop.index` | The index of the current iteration (starts at 0) |
 | `loop.iteration` | The current iteration number (starts at 1) |
 | `loop.first` | Whether this is the first iteration |
@@ -3094,6 +3109,7 @@ When iterating over a list of tuples, you can destructure them directly:
 Components are reusable template partials. Create them in `src/resources/views/components/` and reference them with the `x-` prefix:
 
 **components/alert.loom.html:**
+
 ```html
 <div :class="['alert', 'alert-' <> type]">
   <slot />
@@ -3147,6 +3163,7 @@ When you add attributes to a component that aren't defined in its `props()`, the
 ```
 
 **Merging behavior:**
+
 - `class` and `style` are **merged** with the root element's existing values
 - All other attributes **override** any existing values
 
@@ -3155,6 +3172,7 @@ When you add attributes to a component that aren't defined in its `props()`, the
 By default, HTML attributes are added to the first element. Use `@attributes` to control where they go:
 
 **components/alert.loom.html:**
+
 ```html
 <div :class="['alert', 'alert-' <> type]">
   <slot />
@@ -3167,6 +3185,7 @@ By default, HTML attributes are added to the first element. Use `@attributes` to
 Slots are defined in component templates using the `<slot>` element. Use `<slot />` for the default slot and `<slot name="x" />` for named slots:
 
 **components/card.loom.html:**
+
 ```html
 <div class="card">
   <div class="card-header">
@@ -3182,6 +3201,7 @@ Slots are defined in component templates using the `<slot>` element. Use `<slot 
 ```
 
 **Using slots when calling the component:**
+
 ```html
 <x-card>
   <slot name="header">
@@ -3201,6 +3221,7 @@ Slots are defined in component templates using the `<slot>` element. Use `<slot 
 Slots can have fallback content that displays when no content is provided:
 
 **components/card.loom.html:**
+
 ```html
 <div class="card">
   <div class="card-header">
@@ -3284,6 +3305,7 @@ Organize related components in subdirectories with the `x-deeply:nested:componen
 Layouts are just components that wrap your page content. Create a layout in `src/resources/views/components/layouts/`:
 
 **components/layouts/app.loom.html:**
+
 ```html
 ---
 import glimr/vite
@@ -3324,6 +3346,7 @@ Use `<slot />` to mark where child content will be inserted. You can also use na
 ```
 
 **Using a layout in a view:**
+
 ```html
 <x-layouts:app :title="page_title">
   <slot name="header">
@@ -3469,7 +3492,7 @@ import glimr/http/response.{type Response}
 pub fn show(ctx: Context(App), user_id: Int) -> Response {
   case user.find(ctx.app.db, user_id) {
     Ok(user) -> {
-      user_show.render(user: user) 
+      user_show.render(user: user)
       |> response.string_tree(200)
     }
     Error(NotFound) -> response.not_found()
@@ -3477,7 +3500,7 @@ pub fn show(ctx: Context(App), user_id: Int) -> Response {
 }
 ```
 
-##### SQLite with :memory:
+##### SQLite with :Memory:
 
 For development or testing, you can use an in-memory SQLite database. Update your `.env` file:
 
@@ -3548,6 +3571,7 @@ Run the following command to create a directory for your new database connection
 ```bash
 ./glimr setup_database main
 ```
+
 Add the pool to your app type in `src/app/app.gleam`:
 
 ```gleam
@@ -3704,7 +3728,7 @@ pub fn definition() {
 #### Available Column Types
 
 | Function | PostgreSQL | SQLite | Gleam Type |
-|----------|------------|--------|------------|
+| ---------- | ------------ | -------- | ------------ |
 | `schema.id()` | `SERIAL PRIMARY KEY` | `INTEGER PRIMARY KEY AUTOINCREMENT` | `Int` |
 | `schema.uuid("name")` | `UUID` | `TEXT` | `String` |
 | `schema.string("name")` | `VARCHAR(255)` | `TEXT` | `String` |
@@ -3742,21 +3766,21 @@ schema.float("rate") |> schema.default_float(0.0)
 schema.timestamp("published_at") |> schema.default_now()
 schema.unix_timestamp("created_at") |> schema.default_unix_now()
 schema.uuid("external_id") |> schema.auto_uuid()
-schema.string("deleted_at") 
-  |> schema.nullable() 
+schema.string("deleted_at")
+  |> schema.nullable()
   |> schema.default_null()
 
 // Array columns
 schema.string("tags") |> schema.array()
 
 // nested: List(List(Int))
-schema.int("scores") 
-  |> schema.array() 
-  |> schema.array()  
+schema.int("scores")
+  |> schema.array()
+  |> schema.array()
 
 // Array with default
-schema.string("tags") 
-  |> schema.array() 
+schema.string("tags")
+  |> schema.array()
   |> schema.default_empty_array()
 
 // Foreign key actions
@@ -3769,7 +3793,7 @@ schema.enum("status", ["active", "inactive"]) |> schema.enum_name("user_status")
 ```
 
 | Modifier | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `\|> schema.nullable()` | Allow NULL values (default is NOT NULL) |
 | `\|> schema.default_bool(True)` | Set a boolean default value |
 | `\|> schema.default_string("value")` | Set a string default value |
@@ -3791,7 +3815,7 @@ schema.enum("status", ["active", "inactive"]) |> schema.enum_name("user_status")
 Any column type can be wrapped with the `schema.array()` modifier to create an array column:
 
 | Example | PostgreSQL | SQLite | Gleam Type |
-|---------|------------|--------|------------|
+| --------- | ------------ | -------- | ------------ |
 | `schema.string("tags") \|> schema.array()` | `VARCHAR(255)[]` | `TEXT` (JSON) | `List(String)` |
 | `schema.int("scores") \|> schema.array()` | `INTEGER[]` | `TEXT` (JSON) | `List(Int)` |
 | `schema.int("matrix") \|> schema.array() \|> schema.array()` | `INTEGER[][]` | `TEXT` (JSON) | `List(List(Int))` |
@@ -3851,7 +3875,7 @@ schema.foreign("user_id", "users")
 ```
 
 | Action | SQL |
-|--------|-----|
+| -------- | ----- |
 | `schema.Cascade` | `CASCADE` |
 | `schema.Restrict` | `RESTRICT` |
 | `schema.SetNull` | `SET NULL` |
@@ -3879,7 +3903,7 @@ schema.table(table_name, [
 ```
 
 | Function | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `schema.index(["col"])` | Regular index on a single column |
 | `schema.index(["col1", "col2"])` | Composite index on multiple columns |
 | `schema.unique(["col"])` | Unique index on a single column |
@@ -3888,7 +3912,7 @@ schema.table(table_name, [
 #### Index Modifiers
 
 | Modifier | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `\|> schema.named("name")` | Custom index name (default: `idx_{table}_{col1}_{col2}`) |
 
 #### Generating Migrations
@@ -3904,6 +3928,7 @@ Run the migration generator:
 ```
 
 This will:
+
 1. Scan schema files in `src/database/{connection_name}/models/`
 2. Compare against the stored snapshot (`._schema_snapshot.json`)
 3. Detect changes (new tables, dropped tables, column changes, index changes)
@@ -3968,7 +3993,7 @@ Each model includes a `queries/` folder with pre-generated CRUD queries. These a
 
 When you create a model with the `./glimr make_model` command, the following query files are generated for you:
 
-```
+```text
 src/database/main/models/user/queries/
 ├── create.sql
 ├── delete.sql
@@ -3998,11 +4023,12 @@ SELECT * FROM users WHERE is_active = true ORDER BY created_at DESC;
 The file name prefix determines whether the query returns a single row or multiple rows:
 
 | Prefix | Returns | Gleam Return Type |
-|--------|---------|-------------------|
+| -------- | --------- | ------------------- |
 | `list` or `list_*` | Multiple rows | `Result(List(User), DbError)` |
 | Anything else | Single row | `Result(User, DbError)` |
 
 **Examples:**
+
 - `find.sql` → returns `Result(User, DbError)`
 - `by_email.sql` → returns `Result(User, DbError)`
 - `list.sql` → returns `Result(List(User), DbError)`
@@ -4024,7 +4050,7 @@ After adding or modifying queries, run:
 This generates a fully-typed repository file with Gleam functions for each query. Every query generates **four functions**:
 
 | Function | Accepts | Returns | Use Case |
-|----------|---------|---------|----------|
+| ---------- | --------- | --------- | ---------- |
 | `find(pool, id)` | Pool | `Result(User, DbError)` | Standard queries with explicit error handling |
 | `find_wc(conn, id)` | Connection | `Result(User, DbError)` | Inside transactions |
 | `find_or_fail(pool, id, then)` | Pool + continuation | `Response` | HTTP handlers — short-circuits to a status response on error |
@@ -4065,6 +4091,7 @@ You can specify the pool size by setting the `DB_POOL_SIZE` env variable, and th
 **How it works:**
 
 When you call a query function like `user.find(ctx.app.db, id)`, it automatically:
+
 1. Checks out a connection from the pool
 2. Executes the query
 3. Returns the connection to the pool
@@ -4197,7 +4224,7 @@ Inside transactions, use the `_wc` (with-connection) variants — `db.query_one_
 **Available parameter helpers:**
 
 | Helper | Type | Example |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `db.string(value)` | `String` | `db.string("hello")` |
 | `db.int(value)` | `Int` | `db.int(42)` |
 | `db.float(value)` | `Float` | `db.float(3.14)` |
@@ -4210,6 +4237,7 @@ Inside transactions, use the `_wc` (with-connection) variants — `db.query_one_
 #### Database Transactions
 
 For operations that must succeed or fail together, use transactions. They automatically:
+
 - Check out a connection from the pool
 - Begin a transaction
 - Commit on success or roll back on error
@@ -4237,6 +4265,7 @@ pub fn transfer(
 ```
 
 The second parameter is the retry count for deadlocks:
+
 - `0` = no retries (try once, fail immediately on error)
 - `3` = retry up to 3 times on deadlock (4 total attempts)
 
@@ -4546,7 +4575,7 @@ The `CachePool` type returned by all backends (`file_cache.start`, `redis.start`
 All cache drivers support these operations:
 
 | Operation | Description |
-|-----------|-------------|
+| ----------- | ------------- |
 | `get(pool, key)` | Get a value by key |
 | `put(pool, key, value, ttl)` | Store with TTL (seconds) |
 | `put_forever(pool, key, value)` | Store without expiration |
@@ -4562,7 +4591,7 @@ All cache drivers support these operations:
 **JSON operations** (for structured data):
 
 | Operation | Description |
-|-----------|-------------|
+| ----------- | ------------- |
 | `get_json(pool, key, decoder)` | Get and decode JSON |
 | `put_json(pool, key, value, encoder, ttl)` | Encode and store JSON |
 | `put_json_forever(pool, key, value, encoder)` | Store JSON permanently |
@@ -4571,7 +4600,7 @@ All cache drivers support these operations:
 **Database-only operations** (via `glimr/cache`):
 
 | Operation | Description |
-|-----------|-------------|
+| ----------- | ------------- |
 | `create_table(db_pool, table)` | Create the cache table |
 | `cleanup_expired(db_pool, table)` | Remove expired entries |
 
@@ -4672,7 +4701,7 @@ pub fn show(ctx: Context(App), id: Int) -> Response {
 
   case user_result {
     Ok(user) -> {
-      user_show.render(user: user) 
+      user_show.render(user: user)
       |> response.string_tree(200)
     }
     Error(db.NotFound) -> response.not_found()
@@ -4958,7 +4987,7 @@ Register packages that offer console commands in `glimr.toml`:
   auto_compile = true
   packages = [
     "glimr",
-    "package_name" # <-- Register the package here 
+    "package_name" # <-- Register the package here
   ]
 ```
 
@@ -5016,7 +5045,7 @@ pub fn show(ctx: Context(App)) -> Response {
 Each getter has two variants:
 
 | Function | Behavior |
-|----------|----------|
+| ---------- | ---------- |
 | `config.get_string(path)` | Returns the value or **panics** if missing |
 | `config.get_string_or(path)` | Returns `Result(String, Nil)` |
 | `config.get_int(path)` | Returns the value or **panics** if missing |
@@ -5034,7 +5063,7 @@ TOML values support `${VAR}` and `${VAR:-fallback}` syntax:
 # config/app.toml
 
 name = "${APP_NAME:-Glimr}"
-port = "${APP_PORT:-8000}"
+port = "${APP_PORT:-4567}"
 key = "${APP_KEY}"
 ```
 
