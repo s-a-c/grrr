@@ -235,9 +235,9 @@ fn encode_grrr(item: Grrr) -&gt; json.Json {
   ])
 }</code></pre>
           Boot <code>./glimr run</code> and verify in another terminal:
-<pre><code>curl -s http://localhost:8000/api/grrrs | jq .
+<pre><code>curl -s http://localhost:4567/api/grrrs | jq .
 # Expected: { "grrrs": [] }</code></pre>
-          *(Replace <code>8000</code> with your <code>APP_PORT</code> if you customized <code>server/.env</code>.)*
+          *(Replace <code>4567</code> with your <code>APP_PORT</code> if you customized <code>server/.env</code>.)*
         </li>
       </ol>
 

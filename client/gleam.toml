@@ -28,3 +28,6 @@ runtime = "bun"
 
 [tools.lustre.bin]
 bun = "system"
+
+[tools.lustre.dev]
+proxy = { from = "/api", to = "http://localhost:4567/api" }
