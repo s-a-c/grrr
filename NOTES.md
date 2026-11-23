@@ -3,6 +3,7 @@
 - **Pacing:** 10–15 minute bites, hands-on, one tangible win per lesson.
 - **UI & Visual Aesthetic (applies to every lesson and reference page):**
   - High-contrast **WCAG 2.1 AA** compliant **Catppuccin Latte (light) / Catppuccin Mocha (dark)** theme with user-selectable Light / Dark / System switcher (persisted in `localStorage`), plus Glow, Motion, and Audio toggles.
+  - **Common 3-zone topbar (`assets/ui.js`):** Every lesson and `reference/glossary.html` uses `<header class="topbar" data-lesson="NNNN"></header>` (or `data-lesson="glossary"`). `assets/ui.js` renders LHS (logo + lesson short name, scrollable reverse-order `Lessons ▾` dropdown from `GRRR_LESSONS`, Glossary button), Centre (Mastery pill), and RHS (Theme, Glow, Motion, Audio). When adding a new lesson, prepend it to `GRRR_LESSONS` in `assets/ui.js`.
   - **Highly animated & interactive:** 3D orbital stages, 3D pointer-tilt cards with dynamic specular sheen, glow effects, animated SVGs (flowing data packets, interactive state-gate simulators), scroll reveals, and synthesized Web Audio sound effects (`assets/ui.js`, `assets/lesson.css`, `assets/quiz.js`).
   - Reference benchmark: `/Users/s-a-c/docs/superpowers/research/2026-11-12-typescript-effect-rescript-gleam-explainer-glm.html`.
 - **Mental-model bridge:** Anchor new concepts to Laravel/Livewire and Laravel/React:

@@ -25,42 +25,7 @@
 <body>
   <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <div class="topbar-left">
-      <a class="brand" href="#top">
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
-          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
-          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
-        </svg>
-        <span>grrr · Reference</span>
-      </a>
-      <nav class="nav-links" aria-label="Course navigation">
-        <a href="../lessons/0001-domain-model-and-workspace-map.html">0001</a>
-        <a href="../lessons/0002-composing-results-with-use-and-dual-target.html">0002</a>
-        <a href="../lessons/0003-booting-glimr-and-wiring-shared.html">0003</a>
-        <a href="../lessons/0004-sqlite-schema-migrations-and-typed-queries.html">0004</a>
-        <a href="../lessons/0005-post-grrrs-json-decoding-uuidv7-and-422.html">0005</a>
-        <a href="../lessons/0006-loom-admin-portal-and-components.html">0006</a>
-        <a href="../lessons/0007-lustre-spa-mvu-and-shared-in-browser.html">0007</a>
-        <a href="./glossary.html" aria-current="page">Glossary</a>
-        <a href="../docs/REPO-MANAGEMENT.md">Repo Guide</a>
-      </nav>
-    </div>
-
-    <div class="topbar-controls">
-      <div class="seg-group" role="group" aria-label="Color theme">
-        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false">Latte</button>
-        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true">Auto</button>
-        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false">Mocha</button>
-      </div>
-      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true">Glow</button>
-      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true">Motion</button>
-      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true">
-        <span id="sound-label">Audio</span>
-      </button>
-    </div>
-  </header>
+  <header class="topbar" data-lesson="glossary"></header>
 
   <main class="page" id="top">
     <header class="reveal">

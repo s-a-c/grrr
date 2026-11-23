@@ -25,49 +25,7 @@
 <body>
   <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <div class="topbar-left">
-      <a class="brand" href="#top">
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>
-          <circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>
-          <circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>
-        </svg>
-        <span>grrr · Lesson 0008</span>
-      </a>
-      <nav class="nav-links" aria-label="Course navigation">
-        <a href="./0001-domain-model-and-workspace-map.html">0001</a>
-        <a href="./0002-composing-results-with-use-and-dual-target.html">0002</a>
-        <a href="./0003-booting-glimr-and-wiring-shared.html">0003</a>
-        <a href="./0004-sqlite-schema-migrations-and-typed-queries.html">0004</a>
-        <a href="./0005-post-grrrs-json-decoding-uuidv7-and-422.html">0005</a>
-        <a href="./0006-loom-admin-portal-and-components.html">0006</a>
-        <a href="./0007-lustre-spa-mvu-and-shared-in-browser.html">0007</a>
-        <a href="./0008-lustre-application-effects-and-rsvp.html" aria-current="page">Lesson 0008</a>
-        <a href="../reference/glossary.html">Glossary</a>
-      </nav>
-    </div>
-
-    <div class="topbar-controls">
-      <div class="mastery-pill" title="Quiz mastery for this lesson">
-        <span>Mastery</span>
-        <span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>
-        <span id="mastery-count">0/5</span>
-      </div>
-
-      <div class="seg-group" role="group" aria-label="Color theme">
-        <button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>
-        <button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>
-        <button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>
-      </div>
-
-      <button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>
-      <button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>
-      <button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]">
-        <span id="sound-label">Audio</span>
-      </button>
-    </div>
-  </header>
+  <header class="topbar" data-lesson="0008"></header>
 
   <main class="page" id="top">
     <!-- HERO + 3D ORBITAL STAGE -->
@@ -338,105 +296,101 @@ gleam run -m lustre/dev start</code></pre>
     </section>
 
     <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
-    <section id="sec-quiz" class="reveal">
-      <h2>3. Quick Retrieval Check (5 Questions)</h2>
-      <p>Each reload or reset draws 5 randomized questions from an 8-question pool.</p>
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="5">
+      <h2>3. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 5 random questions from an 8-question pool.</p>
 
-      <div class="quiz-box" data-quiz-pool="lesson-0008" data-quiz-count="5">
-        <div class="quiz-pool" hidden>
-          <div class="quiz-q" data-answer="b">
-            <h4>What does upgrading from <code>lustre.simple</code> to <code>lustre.application</code> change?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="Both simple and application pass Model to view(model) -&gt; Element(Msg).">view returns HTML strings instead of Element(Msg).</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! lustre.application changes init and update to return #(Model, Effect(Msg)).">init and update return #(Model, Effect(Msg)).</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="Lustre still runs on the JavaScript target in the browser.">The SPA compiles to Erlang instead of JS.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="Model remains an immutable Gleam value.">Model becomes mutable across components in memory.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="c">
-            <h4>What should <code>update</code> return for a pure UI event like <code>AuthorChanged</code>?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="lustre.application expects a tuple #(Model, Effect(Msg)).">Only the updated Model without any tuple.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="Returning fetch_grrrs() on every keystroke would spam the API.">The fetch_grrrs() HTTP effect on each keystroke.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! effect.none() tells Lustre there is no side effect to run.">The updated Model paired with effect.none().</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="Nil is not a valid return type for update.">Nil so Lustre skips re-rendering the page.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="a">
-            <h4>Why configure <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code>?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Forwarding /api from localhost:1234 to localhost:8000 keeps requests same-origin with zero CORS boilerplate.">Forward /api requests to Glimr without CORS.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="SQLite runs on the Glimr BEAM server, not in the browser.">Bundle SQLite directly inside the browser JS.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="Gleam dependencies still download via Hex.">Replace Hex package resolution during gleam build.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="Loom templates run on Glimr, not inside lustre/dev.">Compile Loom HTML templates inside client/src.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="d">
-            <h4>What three checks does <code>rsvp.expect_json</code> perform before running your decoder?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="rsvp does not inspect SQLite or CSRF tokens.">CSRF token, SQLite lock, and UTF-8 BOM.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="rsvp expects a 2xx status and JSON content-type, not cookies.">Session cookie, CORS origin, and gzip header.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp handles HTTP responses, not WebSocket frames.">WebSocket upgrade, BEAM PID, and HTML body.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! rsvp.expect_json checks 2xx status, application/json content-type, and JSON decoding.">2xx status, application/json header, and JSON decode.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="b">
-            <h4>How does <code>Model.submitting</code> prevent accidental duplicate POST requests?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr does not lock the entire SQLite file for one form.">It locks SQLite tables from the browser.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Submitted ignores repeats while submitting is True, and the button is disabled.">Submitted ignores repeats and disables the button.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="HTTP requests stay asynchronous via Effect(Msg).">It pauses JavaScript execution until 201 returns.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="Clearing the author field would erase the user's handle.">It clears the author handle before every request.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="c">
-            <h4>What <code>rsvp.Error</code> variant is returned when Glimr responds with HTTP 422 or 500 to <code>rsvp.expect_json</code>?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="NetworkError means the browser could not reach the server.">NetworkError because the server rejected the request.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="BadUrl is only returned when parsing the URL string fails.">BadUrl because the endpoint rejected the payload.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Non-2xx (4xx/5xx) responses return HttpError(Response(String)).">HttpError containing the full Response(String) value.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="JsonError only occurs when decoding a 2xx JSON body fails.">JsonError before checking the HTTP status code.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="a">
-            <h4>Why run <code>post.new_draft_all</code> in <code>Submitted</code> before returning <code>post_grrr(draft)</code>?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Invalid input shows instant 0ms errors without wasting an HTTP round-trip.">Give instant 0ms feedback without an HTTP round-trip.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr still validates every request on the server with the same shared/ code.">Skip server-side validation inside grrr_controller.store.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp.post sets content-type: application/json automatically.">Set the application/json header on rsvp.post.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="UUIDv7 IDs are generated on the server inside store.">Generate UUIDv7 primary keys inside the browser.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
-
-          <div class="quiz-q" data-answer="d">
-            <h4>Which <code>rsvp</code> handler lets you inspect <code>422</code> JSON bodies directly instead of turning them into <code>HttpError</code>?</h4>
-            <div class="quiz-options">
-              <button type="button" class="quiz-option" data-choice="a" data-explain="expect_text only accepts 2xx text/* responses.">rsvp.expect_text for plain text response bodies.</button>
-              <button type="button" class="quiz-option" data-choice="b" data-explain="expect_ok_response still rejects non-2xx statuses with HttpError.">rsvp.expect_ok_response for any status code.</button>
-              <button type="button" class="quiz-option" data-choice="c" data-explain="effect.none() does not run an HTTP request.">effect.none() paired with decode.run.</button>
-              <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! rsvp.expect_any_response delivers 4xx and 5xx responses as Ok(resp) so you can branch on resp.status.">rsvp.expect_any_response to branch on resp.status.</button>
-            </div>
-            <div class="quiz-feedback" aria-live="polite"></div>
-          </div>
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">What does upgrading from <code>lustre.simple</code> to <code>lustre.application</code> change?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Both simple and application pass Model to view(model) -&gt; Element(Msg).">view returns HTML strings instead of Element(Msg).</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! lustre.application changes init and update to return #(Model, Effect(Msg)).">init and update return #(Model, Effect(Msg)).</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Lustre still runs on the JavaScript target in the browser.">The SPA compiles to Erlang instead of JS.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Model remains an immutable Gleam value.">Model becomes mutable across components in memory.</button>
         </div>
-        <div class="quiz-questions"></div>
-        <div class="quiz-footer">
-          <div class="quiz-score" aria-live="polite"></div>
-          <button type="button" class="quiz-reset">Reset Quiz</button>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">What should <code>update</code> return for a pure UI event like <code>AuthorChanged</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="lustre.application expects a tuple #(Model, Effect(Msg)).">Only the updated Model without any tuple.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Returning fetch_grrrs() on every keystroke would spam the API.">The fetch_grrrs() HTTP effect on each keystroke.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! effect.none() tells Lustre there is no side effect to run.">The updated Model paired with effect.none().</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Nil is not a valid return type for update.">Nil so Lustre skips re-rendering the page.</button>
         </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why configure <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Forwarding /api from localhost:1234 to localhost:8000 keeps requests same-origin with zero CORS boilerplate.">Forward /api requests to Glimr without CORS.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="SQLite runs on the Glimr BEAM server, not in the browser.">Bundle SQLite directly inside the browser JS.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Gleam dependencies still download via Hex.">Replace Hex package resolution during gleam build.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Loom templates run on Glimr, not inside lustre/dev.">Compile Loom HTML templates inside client/src.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">What three checks does <code>rsvp.expect_json</code> perform before running your decoder?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="rsvp does not inspect SQLite or CSRF tokens.">CSRF token, SQLite lock, and UTF-8 BOM.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="rsvp expects a 2xx status and JSON content-type, not cookies.">Session cookie, CORS origin, and gzip header.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp handles HTTP responses, not WebSocket frames.">WebSocket upgrade, BEAM PID, and HTML body.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! rsvp.expect_json checks 2xx status, application/json content-type, and JSON decoding.">2xx status, application/json header, and JSON decode.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">How does <code>Model.submitting</code> prevent accidental duplicate POST requests?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Glimr does not lock the entire SQLite file for one form.">It locks SQLite tables from the browser.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! Submitted ignores repeats while submitting is True, and the button is disabled.">Submitted ignores repeats and disables the button.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="HTTP requests stay asynchronous via Effect(Msg).">It pauses JavaScript execution until 201 returns.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Clearing the author field would erase the user's handle.">It clears the author handle before every request.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">What <code>rsvp.Error</code> variant is returned when Glimr responds with HTTP 422 or 500 to <code>rsvp.expect_json</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="NetworkError means the browser could not reach the server.">NetworkError because the server rejected the request.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="BadUrl is only returned when parsing the URL string fails.">BadUrl because the endpoint rejected the payload.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Non-2xx (4xx/5xx) responses return HttpError(Response(String)).">HttpError containing the full Response(String) value.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="JsonError only occurs when decoding a 2xx JSON body fails.">JsonError before checking the HTTP status code.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">Why run <code>post.new_draft_all</code> in <code>Submitted</code> before returning <code>post_grrr(draft)</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Invalid input shows instant 0ms errors without wasting an HTTP round-trip.">Give instant 0ms feedback without an HTTP round-trip.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Glimr still validates every request on the server with the same shared/ code.">Skip server-side validation inside grrr_controller.store.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp.post sets content-type: application/json automatically.">Set the application/json header on rsvp.post.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="UUIDv7 IDs are generated on the server inside store.">Generate UUIDv7 primary keys inside the browser.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">Which <code>rsvp</code> handler lets you inspect <code>422</code> JSON bodies directly instead of turning them into <code>HttpError</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="expect_text only accepts 2xx text/* responses.">rsvp.expect_text for plain text response bodies.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="expect_ok_response still rejects non-2xx statuses with HttpError.">rsvp.expect_ok_response for any status code.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="effect.none() does not run an HTTP request.">effect.none() paired with decode.run.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! rsvp.expect_any_response delivers 4xx and 5xx responses as Ok(resp) so you can branch on resp.status.">rsvp.expect_any_response to branch on resp.status.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score aria-live="polite">Answered 0 / 5 · Correct 0 / 5 · Pool: 5 of 8</span>
+        <button type="button" class="btn-secondary" data-quiz-reset>Reset Quiz</button>
       </div>
     </section>
 
