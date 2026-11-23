@@ -13,6 +13,111 @@
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
+  /* 0. Common Course Lesson Registry (reverse order: newest first) */
+  const GRRR_LESSONS = [
+    { id: '0004', short: 'SQLite & Gen',   file: '0004-sqlite-schema-migrations-and-typed-queries.html' },
+    { id: '0003', short: 'Glimr Server',   file: '0003-booting-glimr-and-wiring-shared.html' },
+    { id: '0002', short: 'Results & use',  file: '0002-composing-results-with-use-and-dual-target.html' },
+    { id: '0001', short: 'Domain Model',   file: '0001-domain-model-and-workspace-map.html' }
+  ];
+  window.GRRR_LESSONS = GRRR_LESSONS;
+
+  function mountTopbar() {
+    const header = $('header.topbar[data-lesson]');
+    if (!header || header.dataset.mounted === 'true') return;
+    header.dataset.mounted = 'true';
+
+    const currentId = header.dataset.lesson;
+    const isRef = currentId === 'glossary';
+    const lessonPrefix = isRef ? '../lessons/' : './';
+    const glossaryHref = isRef ? './glossary.html' : '../reference/glossary.html';
+    const currentLesson = GRRR_LESSONS.find((l) => l.id === currentId);
+    const shortLabel = isRef
+      ? 'Glossary'
+      : currentLesson
+        ? `${currentLesson.id} · ${currentLesson.short}`
+        : `Lesson ${currentId}`;
+
+    const poolEl = $('.quiz-pool');
+    const hasQuiz = Boolean(poolEl);
+    const quizCount = poolEl ? (poolEl.dataset.quizCount || '4') : '0';
+
+    const itemsHtml = GRRR_LESSONS.map((l) => {
+      const active = l.id === currentId ? ' aria-current="page"' : '';
+      return `<a class="lesson-menu-item" role="menuitem" href="${lessonPrefix}${l.file}"${active}>`
+        + `<span class="lesson-menu-id">${l.id}</span>`
+        + `<span>${l.short}</span>`
+        + `</a>`;
+    }).join('');
+
+    const centerHtml = hasQuiz
+      ? `<div class="topbar-center">`
+        + `<div class="mastery-pill" title="Quiz mastery for this lesson">`
+        + `<span>Mastery</span>`
+        + `<span class="mastery-track"><span class="mastery-fill" id="mastery-fill"></span></span>`
+        + `<span id="mastery-count">0/${quizCount}</span>`
+        + `</div>`
+        + `</div>`
+      : `<div class="topbar-center"></div>`;
+
+    header.innerHTML =
+      `<div class="topbar-left">`
+      + `<a class="brand" href="#top">`
+      + `<svg viewBox="0 0 32 32" aria-hidden="true">`
+      + `<polygon points="16,2 29,9.5 29,22.5 16,30 3,22.5 3,9.5" fill="none" stroke="var(--gleam)" stroke-width="2.2" stroke-linejoin="round"/>`
+      + `<circle cx="16" cy="16" r="6" fill="none" stroke="var(--glimr)" stroke-width="2"/>`
+      + `<circle cx="16" cy="16" r="2.5" fill="var(--lustre)"/>`
+      + `</svg>`
+      + `<span>grrr <span class="brand-sep">·</span> <span class="brand-short">${shortLabel}</span></span>`
+      + `</a>`
+      + `<div class="lesson-picker">`
+      + `<button type="button" class="lesson-picker-btn" id="lesson-picker-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="lesson-menu">`
+      + `<span>Lessons</span><span class="lesson-picker-caret" aria-hidden="true">▾</span>`
+      + `</button>`
+      + `<div class="lesson-menu" id="lesson-menu" role="menu" aria-label="Course lessons (newest first)" hidden>${itemsHtml}</div>`
+      + `</div>`
+      + `<a class="nav-glossary-btn" href="${glossaryHref}"${isRef ? ' aria-current="page"' : ''}>Glossary</a>`
+      + `</div>`
+      + centerHtml
+      + `<div class="topbar-controls">`
+      + `<div class="seg-group" role="group" aria-label="Color theme">`
+      + `<button type="button" class="seg-btn" data-scheme-btn="light" aria-pressed="false" title="Catppuccin Latte (Light) [t]">Latte</button>`
+      + `<button type="button" class="seg-btn" data-scheme-btn="system" aria-pressed="true" title="Match OS appearance">Auto</button>`
+      + `<button type="button" class="seg-btn" data-scheme-btn="dark" aria-pressed="false" title="Catppuccin Mocha (Dark) [t]">Mocha</button>`
+      + `</div>`
+      + `<button type="button" class="ctrl-btn" id="glow-toggle" aria-pressed="true" title="Toggle glow effects [g]">Glow</button>`
+      + `<button type="button" class="ctrl-btn" id="motion-toggle" aria-pressed="true" title="Toggle animations">Motion</button>`
+      + `<button type="button" class="ctrl-btn" id="sound-toggle" aria-pressed="true" title="Toggle Web Audio SFX [m]"><span id="sound-label">Audio</span></button>`
+      + `</div>`;
+
+    const btn = $('#lesson-picker-btn', header);
+    const menu = $('#lesson-menu', header);
+    if (btn && menu) {
+      const setOpen = (open) => {
+        btn.setAttribute('aria-expanded', String(open));
+        menu.hidden = !open;
+        if (open) {
+          const activeItem = menu.querySelector('[aria-current="page"]');
+          if (activeItem) activeItem.scrollIntoView({ block: 'nearest' });
+        }
+      };
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(menu.hidden);
+        sfx.click();
+      });
+      document.addEventListener('click', (e) => {
+        if (!menu.hidden && !header.contains(e.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !menu.hidden) {
+          setOpen(false);
+          btn.focus();
+        }
+      });
+    }
+  }
+
   const store = {
     read() {
       try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }
@@ -389,7 +494,11 @@
     });
   }
 
+  // Mount common topbar synchronously so #mastery-fill / #mastery-count exist before quiz.js initializes
+  mountTopbar();
+
   document.addEventListener('DOMContentLoaded', () => {
+    mountTopbar();
     env.init();
     initTiltCards();
     initEnhancements();
