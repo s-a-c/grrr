@@ -3,6 +3,7 @@
 ## Knowledge
 
 ### Gleam & BEAM
+
 - [Official Site: Gleam](https://gleam.run/)
   Canonical home for Gleam releases, installation, and ecosystem links. Use for: checking language updates and official announcements.
 - [Interactive Guide: Gleam Language Tour](https://tour.gleam.run/)
@@ -13,6 +14,7 @@
   Official OTP actor, supervisor, and process abstractions for Gleam on the BEAM. Use for: building live updates, PubSub, and presence processes in `grrr`.
 
 ### Glimr (Backend, Loom Templates, Auth, Migrations)
+
 - [Official Docs: Glimr (`glimr.build`)](https://glimr.build/)
   Primary documentation for Glimr: routing, controllers, middleware, Loom templates, database migrations, sessions, and caching. Use for: all Glimr framework conventions and APIs.
 - [GitHub: `glimr-org/glimr` (Starter Template & Docs)](https://github.com/glimr-org/glimr)
@@ -23,12 +25,14 @@
   Session-based authentication layer with Argon2id password hashing for Glimr. Use for: `grrr` user accounts, login, and admin auth.
 
 ### Lustre (Frontend SPA, Islands, Server Components)
+
 - [HexDocs: Lustre](https://hexdocs.pm/lustre/)
   Official API docs and quickstart guide covering Model-View-Update, effects (`lustre/effect`), HTML elements, and Server Components. Use for: building the `grrr` SPA and optional admin islands.
 - [GitHub: `lustre-labs/lustre`](https://github.com/lustre-labs/lustre)
   Source repository, examples, and release notes for Lustre. Use for: checking idiomatic SPA structure, routing, and HTTP/WebSocket effect examples.
 
 ## Wisdom (Communities)
+
 - [Gleam Discord Server](https://discord.gg/Fm8aMwZ)
   The main, active Gleam community with dedicated channels for help, web dev, Lustre, and ecosystem packages. Use for: architecture critiques, idiom checks, and real-world BEAM/Lustre troubleshooting.
 - [r/gleam (Reddit)](https://www.reddit.com/r/gleam/)
@@ -37,5 +41,6 @@
   Searchable directory of Gleam Hex packages. Use for: discovering well-maintained libraries (JSON codecs, WebSockets, SQLite/Postgres drivers).
 
 ## Gaps
+
 - **Glimr + Lustre monorepo layout:** Verify the cleanest path-dependency setup in `gleam.toml` between `shared/`, `server/` (Glimr), and `client/` (Lustre) before Lesson 0003.
 - **Glimr WebSocket / PubSub / Presence API:** Check current `glimr.build` and `glimr-org/framework` docs for built-in WebSocket/broadcast support versus wiring `mist` + `gleam_otp` directly when we reach the live-updates lessons.

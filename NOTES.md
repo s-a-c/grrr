@@ -25,7 +25,6 @@
   - **Timestamps:** Use `schema.timestamps()` (PostgreSQL `TIMESTAMPTZ` / SQLite `TEXT` ISO-8601 `String`, formatted via `gleam/time/timestamp.to_rfc3339(duration.seconds(0))`) for domain records; reserve `schema.unix_timestamps()` for internal integer TTLs/caches.
   - **Glimr `queries/*.sql` gotcha:** Omit trailing semicolons (`;`) in `queries/*.sql` files — `RETURNING *;` causes Glimr's codegen to emit an invalid `*;: String` argument.
 - **Local toolchain:** Verified `gleam 1.19.2`, Erlang `OTP 29`, and `bun` (preferred JS runtime & package manager over Node/npm; `[javascript] runtime = "bun"` in `gleam.toml`, `bun --bun vite` + `deps:refresh` in `package.json`).
-
 - **Git & Worktree Workflow (authorized by user):**
   - Bare repo at `grrr/.bare` + 1-line `grrr/.git` redirect (`gitdir: ./.bare`) + sibling worktrees (`main/`, `lesson-0001/`, `lesson-0002/`, ...).
   - Agent is authorized to run lesson-boundary branch/worktree/commit/tag/push steps in this repo.

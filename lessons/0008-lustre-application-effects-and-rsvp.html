@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
 <head>
   <meta charset="utf-8">
@@ -138,7 +138,7 @@ fn fetch_grrrs() -&gt; Effect(Msg) {
               <rect x="13" y="13" width="22" height="22" rx="5" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
             </svg>
           </div>
-          <p><strong>Zero CORS:</strong> Adding <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code> forwards <code>/api</code> from port <code>1234</code> to Glimr on <code>8000</code>.</p>
+          <p><strong>Zero CORS:</strong> Adding <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code> forwards <code>/api</code> from port <code>1234</code> to Glimr on <code>4567</code>.</p>
         </article>
       </div>
 
@@ -214,9 +214,9 @@ fn fetch_grrrs() -&gt; Effect(Msg) {
           <strong>Add <code>rsvp</code> + <code>gleam_json</code> and configure the <code>/api</code> dev proxy</strong>
 <pre><code># Inside lesson-0008/client/
 gleam add rsvp gleam_json</code></pre>
-          Add the dev proxy to <code>client/gleam.toml</code> so browser requests to <code>/api/...</code> on port <code>1234</code> forward directly to Glimr on port <code>8000</code>:
+          Add the dev proxy to <code>client/gleam.toml</code> so browser requests to <code>/api/...</code> on port <code>1234</code> forward directly to Glimr on port <code>4567</code>:
 <pre><code>[tools.lustre.dev]
-proxy = { from = "/api", to = "http://localhost:8000/api" }</code></pre>
+proxy = { from = "/api", to = "http://localhost:4567/api" }</code></pre>
         </li>
 
         <li>
@@ -276,7 +276,7 @@ fn grrr_decoder() -&gt; decode.Decoder(PostedGrrr) {
 
 # Terminal 2 (lesson-0008/client/):
 gleam run -m lustre/dev start</code></pre>
-          Open <a href="http://localhost:1234" target="_blank" rel="noopener noreferrer">http://localhost:1234</a>, post a Grrr, and <strong>refresh the page</strong> — your Grrr stays in the timeline because it was persisted in SQLite! Then open <a href="http://localhost:8000/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:8000/admin/grrrs</a> to see the exact same Grrr in your Loom Admin Portal.
+          Open <a href="http://localhost:1234" target="_blank" rel="noopener noreferrer">http://localhost:1234</a>, post a Grrr, and <strong>refresh the page</strong> — your Grrr stays in the timeline because it was persisted in SQLite! Then open <a href="http://localhost:4567/admin/grrrs" target="_blank" rel="noopener noreferrer">http://localhost:4567/admin/grrrs</a> to see the exact same Grrr in your Loom Admin Portal.
         </li>
       </ol>
 
@@ -325,7 +325,7 @@ gleam run -m lustre/dev start</code></pre>
       <div class="quiz-card" data-answer="a">
         <p class="quiz-prompt">Why configure <code>[tools.lustre.dev] proxy</code> in <code>client/gleam.toml</code>?</p>
         <div class="quiz-options">
-          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Forwarding /api from localhost:1234 to localhost:8000 keeps requests same-origin with zero CORS boilerplate.">Forward /api requests to Glimr without CORS.</button>
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Forwarding /api from localhost:1234 to localhost:4567 keeps requests same-origin with zero CORS boilerplate.">Forward /api requests to Glimr without CORS.</button>
           <button type="button" class="quiz-option" data-choice="b" data-explain="SQLite runs on the Glimr BEAM server, not in the browser.">Bundle SQLite directly inside the browser JS.</button>
           <button type="button" class="quiz-option" data-choice="c" data-explain="Gleam dependencies still download via Hex.">Replace Hex package resolution during gleam build.</button>
           <button type="button" class="quiz-option" data-choice="d" data-explain="Loom templates run on Glimr, not inside lustre/dev.">Compile Loom HTML templates inside client/src.</button>
@@ -415,7 +415,7 @@ gleam run -m lustre/dev start</code></pre>
         { label: 'rsvp.get',    sub: 'GET /api/grrrs',       ring: 0, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-effects', snd: 'gleam' },
         { label: 'rsvp.post',   sub: 'POST /api/grrrs',      ring: 0, idx: 2, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-effects', snd: 'glimr' },
         { label: 'expect_json', sub: '2xx + decode',         ring: 0, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-effects', snd: 'pass' },
-        { label: '/api proxy',  sub: 'lustre/dev -> :8000',  ring: 1, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',     snd: 'glimr' },
+        { label: '/api proxy',  sub: 'lustre/dev -> :4567',  ring: 1, idx: 0, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',     snd: 'glimr' },
         { label: 'effect.none', sub: 'Pure UI transitions',  ring: 1, idx: 1, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-effects', snd: 'lustre' },
         { label: 'submitting',  sub: 'In-flight UI guard',   ring: 1, idx: 2, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab',     snd: 'gleam' },
         { label: 'SQLite',      sub: 'Survives page reload', ring: 1, idx: 3, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-lab',     snd: 'pass' }

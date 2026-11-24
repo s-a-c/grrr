@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
 <head>
   <meta charset="utf-8">
@@ -346,15 +346,15 @@ pub fn show() -&gt; Response {
 <pre><code># Inside lesson-0003/server/
 ./glimr run</code></pre>
           In a second terminal tab, hit your new API endpoint:
-<pre><code>curl -s http://localhost:8000/api/health | jq .</code></pre>
-          Also visit <a href="http://localhost:8000" target="_blank" rel="noopener noreferrer">http://localhost:8000</a> in your browser to see Glimr's default Loom welcome page!
+<pre><code>curl -s http://localhost:4567/api/health | jq .</code></pre>
+          Also visit <a href="http://localhost:4567" target="_blank" rel="noopener noreferrer">http://localhost:4567</a> in your browser to see Glimr's default Loom welcome page!
         </li>
       </ol>
 
       <div class="callout win">
         <p class="callout-title">Lesson 0003 Win Condition</p>
         <p>
-          Glimr is running on <code>localhost:8000</code>, <code>GET /api/health</code> returns JSON constructed from your unforgeable <code>shared/</code> types (<code>Handle</code> + <code>GrrrBody</code>), and <code>./scripts/verify-lesson.sh</code> passes from the <code>lesson-0003/</code> worktree root. Next in <strong>Lesson 0004</strong>: SQLite database schema, automatic migrations, and persisting real Grrrs!
+          Glimr is running on <code>localhost:4567</code>, <code>GET /api/health</code> returns JSON constructed from your unforgeable <code>shared/</code> types (<code>Handle</code> + <code>GrrrBody</code>), and <code>./scripts/verify-lesson.sh</code> passes from the <code>lesson-0003/</code> worktree root. Next in <strong>Lesson 0004</strong>: SQLite database schema, automatic migrations, and persisting real Grrrs!
         </p>
       </div>
     </section>

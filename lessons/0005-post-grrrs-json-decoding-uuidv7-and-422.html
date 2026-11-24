@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
 <head>
   <meta charset="utf-8">
@@ -345,17 +345,17 @@ fn encode_draft_error(err: DraftError) -&gt; json.Json {
         <li>
           <strong>Boot <code>./glimr run</code> and test 422, 201, and GET persistence!</strong>
 <pre><code># 1. Test 422 accumulated error bag (both author AND body invalid):
-curl -s -i -X POST http://localhost:8000/api/grrrs \
+curl -s -i -X POST http://localhost:4567/api/grrrs \
   -H "Content-Type: application/json" \
   -d '{"author":"ab","body":"   "}'
 
 # 2. Test 201 Created with UUIDv7:
-curl -s -i -X POST http://localhost:8000/api/grrrs \
+curl -s -i -X POST http://localhost:4567/api/grrrs \
   -H "Content-Type: application/json" \
   -d '{"author":"@Bear_Dev","body":"First persisted Grrr on BEAM! 🐻"}'
 
 # 3. Verify it comes back in GET /api/grrrs:
-curl -s http://localhost:8000/api/grrrs | jq .</code></pre>
+curl -s http://localhost:4567/api/grrrs | jq .</code></pre>
           *(Use your custom port if you changed <code>APP_PORT</code> in <code>lesson-0005/server/.env</code>.)*
         </li>
       </ol>

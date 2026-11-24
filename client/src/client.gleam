@@ -271,7 +271,7 @@ fn format_error(err: DraftError) -> String {
 
 fn format_http_error(err: rsvp.Error(String)) -> String {
   case err {
-    rsvp.NetworkError -> "Network error: is Glimr running on port 8000?"
+    rsvp.NetworkError -> "Network error: is Glimr running on port 4567?"
     rsvp.HttpError(resp) ->
       "Server returned HTTP " <> int.to_string(resp.status)
     rsvp.JsonError(_) -> "Could not decode JSON response from server"
