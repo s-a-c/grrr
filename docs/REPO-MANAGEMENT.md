@@ -17,11 +17,9 @@ grrr/
 - **Tags:** `checkpoint/lesson-0001`, `checkpoint/lesson-0002`, … (namespaced under `checkpoint/` so tags never collide with branch names).
 - **Tracked project configs:**
   - `.gitignore` / `.gitattributes` (ignores `**/build/`, `**/.env`, local SQLite DBs; tracks `**/manifest.toml` and `**/.env.example`).
-  - `.config/wt.toml` (shared [Worktrunk](https://worktrunk.dev) hooks: `[post-create]` runs `./scripts/setup-worktree.sh`, `[pre-merge]` runs `./scripts/verify-lesson.sh`).
+  - `.config/wt.toml` (shared [Worktrunk](https://worktrunk.dev) hooks: `[pre-start]` runs `./scripts/setup-worktree.sh`, `[pre-merge]` runs `./scripts/verify-lesson.sh`).
 
----
-
-## 2. Cloning From Scratch (New Student Setup)
+## 2. Cloning from Scratch (New Student Setup)
 
 ### Option A: Bare Repo + Sibling Worktrees (Recommended)
 
@@ -53,8 +51,6 @@ git switch lesson-0001
 ./scripts/setup-worktree.sh
 ```
 
----
-
 ## 3. Daily Lesson Workflow
 
 ### With Worktrunk (`wt`)
@@ -66,15 +62,21 @@ worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
 ```
 
 1. **Start Lesson `N` from `main`:**
+
    ```bash
    wt switch --create lesson-0003 main
    ```
+
    `.config/wt.toml` automatically runs `./scripts/setup-worktree.sh` (`gleam deps download`, `.env` seeding).
+
 2. **Verify Lesson `N`:**
+
    ```bash
    ./scripts/verify-lesson.sh
    ```
+
 3. **Complete Lesson `N`, fast-forward `main`, and tag:**
+
    ```bash
    git add -A
    git commit -m "feat(lesson-0003): complete <topic>"
@@ -82,22 +84,28 @@ worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
    git tag -a checkpoint/lesson-0003 -m "Lesson 0003 completed"
    git push origin main lesson-0003 checkpoint/lesson-0003
    ```
+
    > **Note:** If your global `wt` config sets `[merge] remove = true` or `squash = true`, prefer `git -C ../main merge --ff-only lesson-NNNN` (or `wt merge --no-remove --no-squash`) so every lesson worktree and commit stays intact.
 
 ### Manual Pure-`git` Workflow (No Worktrunk Required)
 
 1. **Start Lesson `N` from `main`:**
+
    ```bash
    cd /path/to/grrr
    git worktree add lesson-0003 -b lesson-0003 main
    cd lesson-0003
    ./scripts/setup-worktree.sh
    ```
+
 2. **Work through the lesson and verify:**
+
    ```bash
    ./scripts/verify-lesson.sh
    ```
+
 3. **Commit, fast-forward `main`, tag, and push:**
+
    ```bash
    git add -A
    git commit -m "feat(lesson-0003): complete <topic>"
@@ -105,8 +113,6 @@ worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"
    git tag -a checkpoint/lesson-0003 -m "Lesson 0003 completed"
    git push origin main lesson-0003 checkpoint/lesson-0003
    ```
-
----
 
 ## 4. Per-Worktree Setup Notes
 
