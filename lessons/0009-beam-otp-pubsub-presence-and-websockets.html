@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en" data-theme="mocha" data-glow="on" data-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const p = JSON.parse(localStorage.getItem('grrr-course-prefs-v1') || '{}');
+      const m = p.scheme || 'system';
+      const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.theme = m === 'light' ? 'latte' : m === 'dark' ? 'mocha' : (sysLight ? 'latte' : 'mocha');
+      if (p.glow === 'off') document.documentElement.dataset.glow = 'off';
+      if (p.motion === 'off' || (p.motion == null && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        document.documentElement.dataset.motion = 'off';
+      }
+    } catch (_) {}
+  })();
+  </script>
+  <title>Lesson 0009: Real-Time Timeline &amp; Presence with BEAM/OTP Actors</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+  <header class="topbar" data-lesson="0009"></header>
+
+  <main class="page" id="top">
+    <!-- HERO + 3D ORBITAL STAGE -->
+    <section class="hero-grid reveal">
+      <div>
+        <p class="kicker">Lesson 0009 · BEAM/OTP Real-Time Layer</p>
+        <h1>Live Timeline &amp; Online Presence with <code>BEAM/OTP</code> Actors</h1>
+        <p class="subtitle">
+          Experience the BEAM's superpower firsthand: replace external Redis PubSub and Laravel Reverb with a single typed <a href="https://hexdocs.pm/gleam_otp/" target="_blank" rel="noopener noreferrer">gleam_otp</a> actor, wire <a href="https://hexdocs.pm/mist/" target="_blank" rel="noopener noreferrer">Mist</a> WebSockets at <code>/ws/timeline</code>, and stream live Grrrs and online presence straight into your Lustre SPA.
+        </p>
+
+        <div class="pill-legend">
+          <span class="domain-badge beam">● gleam_otp Actor</span>
+          <span class="domain-badge glimr">■ mist.websocket</span>
+          <span class="domain-badge lustre">▲ effect.from + FFI</span>
+          <span class="domain-badge ok">✓ Zero Redis Needed</span>
+        </div>
+
+        <div class="meta-strip">
+          <span><strong>Time:</strong> 12–15 min</span>
+          <span><strong>Worktree:</strong> <code>lesson-0009/</code></span>
+          <span><strong>Win:</strong> Two browser tabs sync Grrrs &amp; online count live</span>
+        </div>
+      </div>
+
+      <div class="orbit-shell" id="orbit-shell" tabindex="0" aria-label="Interactive 3D BEAM/OTP PubSub constellation">
+        <div class="orbit-toolbar">
+          <button type="button" class="ctrl-btn" id="orbit-pause" aria-pressed="false">Pause</button>
+          <button type="button" class="ctrl-btn" id="orbit-reset">Reset</button>
+        </div>
+        <svg class="orbit-edges" id="orbit-edges" aria-hidden="true"></svg>
+        <div class="orbit-stage" id="orbit-stage">
+          <div class="prism-core" id="prism-core" aria-hidden="true">
+            <div class="prism-face f1">Actor</div>
+            <div class="prism-face f2">Hub</div>
+            <div class="prism-face f3">WS</div>
+            <div class="prism-face f4">PubSub</div>
+            <div class="prism-face f5">BEAM</div>
+            <div class="prism-face f6">Live</div>
+          </div>
+        </div>
+        <div class="orbit-caption">Drag or use arrow keys · Click any node to jump</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: REVERB + REDIS VS BEAM/OTP ACTOR -->
+    <section id="sec-beam" class="reveal">
+      <h2>1. Laravel Reverb + Redis vs. a Single <code>gleam_otp</code> Actor</h2>
+      <p>
+        In PHP/Laravel, HTTP requests are short-lived, so real-time broadcasting requires separate infrastructure (Laravel Reverb + Redis PubSub + queue workers). On the <strong>BEAM</strong>, every WebSocket connection is a lightweight Erlang process (~2 KB), and a single <code>TimelineHub</code> OTP actor holds their typed <code>Subject(String)</code> mailboxes directly in memory inside <code>App</code>.
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>Laravel (Reverb + Redis + Echo)</h3>
+<pre><code>// Separate Reverb daemon + Redis broker + Echo JS client
+broadcast(new GrrrCreated($grrr));
+
+// Presence channels require Redis TTL heartbeats
+// and separate auth/channel boilerplate...</code></pre>
+          <p><small>Three moving services (PHP-FPM, Redis, Reverb) just to fan out one JSON event to open browser tabs.</small></p>
+        </div>
+        <div class="compare-card">
+          <h3>Gleam on BEAM (<code>gleam_otp</code> + <code>mist.websocket</code>)</h3>
+<pre><code>pub type HubMsg {
+  Join(client: Subject(String))
+  Leave(client: Subject(String))
+  BroadcastGrrr(payload: String)
+}
+// Lives inside App(db:, cache:, hub:) — zero extra daemons!</code></pre>
+          <p><small>One typed OTP actor fans out messages to every connected Mist WebSocket process in microseconds.</small></p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <article class="tilt-card beam" data-sound="beam" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3>Typed <code>Subject(Msg)</code></h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--beam)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <circle cx="24" cy="24" r="9" fill="var(--beam-tint)" stroke="var(--beam)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>Compiler-checked mailboxes:</strong> A <code>Subject(HubMsg)</code> only accepts <code>Join</code>, <code>Leave</code>, or <code>BroadcastGrrr</code> — impossible to send an untyped message.</p>
+        </article>
+
+        <article class="tilt-card glimr" data-sound="glimr" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3><code>mist.websocket</code> Selector</h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--glimr)" stroke-width="1.5" stroke-dasharray="8 5"/>
+              <rect x="13" y="13" width="22" height="22" rx="5" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>Exact presence cleanup:</strong> <code>on_init</code> registers a <code>Selector</code> on the client's <code>Subject</code>; when a tab closes, Mist invokes <code>on_close</code> immediately — no Redis TTL lag.</p>
+        </article>
+
+        <article class="tilt-card lustre" data-sound="lustre" tabindex="0">
+          <div class="tilt-sheen"></div>
+          <div class="tilt-head">
+            <h3><code>effect.batch</code> + <code>effect.from</code></h3>
+            <svg class="tilt-emblem" viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="spin-ring" cx="24" cy="24" r="20" fill="none" stroke="var(--lustre)" stroke-width="1.5" stroke-dasharray="5 5"/>
+              <polygon points="24,11 37,34 11,34" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+            </svg>
+          </div>
+          <p><strong>Custom browser effects:</strong> <code>init</code> combines <code>fetch_grrrs()</code> and <code>subscribe_timeline()</code> via <code>effect.batch</code>; <code>effect.from</code> bridges WebSocket events into Lustre <code>Msg</code>s.</p>
+        </article>
+      </div>
+
+      <!-- INTERACTIVE BEAM PUBSUB SIMULATOR -->
+      <div class="instrument">
+        <div class="instrument-bar">
+          <h3>Interactive BEAM Hub: Watch Presence &amp; Broadcast Fan-Out</h3>
+          <div class="sim-controls">
+            <button type="button" class="ctrl-btn" data-hub-act="join">Tab B Connects (Join)</button>
+            <button type="button" class="ctrl-btn" data-hub-act="post">Tab A Posts Grrr</button>
+            <button type="button" class="ctrl-btn" data-hub-act="leave">Tab B Closes (Leave)</button>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 840 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated BEAM TimelineHub actor broadcasting to connected browser tabs">
+          <defs>
+            <filter id="hub-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <marker id="arr-hub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--beam)"/>
+            </marker>
+          </defs>
+
+          <rect x="20" y="60" width="175" height="72" rx="10" fill="var(--glimr-tint)" stroke="var(--glimr)" stroke-width="2"/>
+          <text x="107" y="88" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--glimr-ink)">grrr_controller</text>
+          <text x="107" y="108" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">POST /api/grrrs (201)</text>
+
+          <line class="flow-line" x1="195" y1="96" x2="290" y2="96" stroke="var(--beam)" stroke-width="2.2" marker-end="url(#arr-hub)"/>
+
+          <rect x="294" y="48" width="215" height="96" rx="12" fill="var(--beam-tint)" stroke="var(--beam)" stroke-width="2.2"/>
+          <text x="401" y="80" text-anchor="middle" font-family="monospace" font-size="13" font-weight="800" fill="var(--beam-ink)">TimelineHub Actor</text>
+          <text x="401" y="102" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--text)" id="hub-count">clients: [TabA] (1 online)</text>
+          <text x="401" y="124" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">gleam_otp/actor</text>
+
+          <path class="flow-line" d="M 509 78 L 626 48" stroke="var(--beam)" stroke-width="2.2" fill="none" marker-end="url(#arr-hub)"/>
+          <path class="flow-line" d="M 509 114 L 626 144" stroke="var(--beam)" stroke-width="2.2" fill="none" marker-end="url(#arr-hub)"/>
+
+          <rect x="630" y="16" width="190" height="62" rx="10" fill="var(--lustre-tint)" stroke="var(--lustre)" stroke-width="2"/>
+          <text x="725" y="42" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--lustre-ink)">Tab A (Lustre SPA)</text>
+          <text x="725" y="61" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--subtext0)">deduped by UUIDv7 id</text>
+
+          <rect x="630" y="114" width="190" height="62" rx="10" fill="var(--ok-tint)" stroke="var(--ok)" stroke-width="2"/>
+          <text x="725" y="140" text-anchor="middle" font-family="monospace" font-size="12" font-weight="800" fill="var(--ok-ink)">Tab B (Lustre SPA)</text>
+          <text x="725" y="159" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="var(--text)">instant live prepend!</text>
+
+          <circle id="hub-pkt" cx="401" cy="96" r="9" fill="var(--beam)" filter="url(#hub-glow)"/>
+        </svg>
+
+        <div class="sim-result-banner is-ok" id="hub-banner" aria-live="polite">
+          Click a button above to simulate Join, BroadcastGrrr, and Leave messages on the BEAM actor!
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: HANDS-ON LAB -->
+    <section id="sec-lab" class="reveal">
+      <h2>2. Hands-On Lab (12–15 minutes)</h2>
+      <p>Run server commands in <code>lesson-0009/server/</code> and client commands in <code>lesson-0009/client/</code>.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Add <code>gleam_otp</code> to <code>server/</code> and inspect <code>TimelineHub</code></strong>
+<pre><code># Inside lesson-0009/server/
+gleam add gleam_otp</code></pre>
+          Review <code>server/src/app/realtime/timeline_hub.gleam</code>: <code>actor.new(State(clients: []))</code> handles <code>Join</code>, <code>Leave</code>, and <code>BroadcastGrrr</code>, and sends JSON frames to every connected <code>Subject(String)</code>.
+        </li>
+
+        <li>
+          <strong>Wire <code>hub</code> into <code>App</code>, <code>grrr_controller.store</code>, and <code>/ws/timeline</code></strong><br>
+          In <code>server/src/glimr_app.gleam</code>, we intercept <code>["ws", "timeline"]</code> with <code>mist.websocket</code> before falling through to <code>glimr_mist.handler</code>:
+<pre><code>case request.path_segments(req) {
+  ["ws", "timeline"] -&gt;
+    mist.websocket(
+      request: req,
+      on_init: fn(_conn) {
+        let client = process.new_subject()
+        timeline_hub.join(app.hub, client)
+        let selector = process.new_selector() |&gt; process.select(client)
+        #(client, Some(selector))
+      },
+      on_close: fn(client) { timeline_hub.leave(app.hub, client) },
+      handler: fn(client, msg, conn) {
+        case msg {
+          mist.Custom(payload) -&gt; {
+            let _ = mist.send_text_frame(conn, payload)
+            mist.continue(client)
+          }
+          mist.Closed | mist.Shutdown -&gt; mist.stop()
+          _ -&gt; mist.continue(client)
+        }
+      },
+    )
+  _ -&gt; glimr_handler(req)
+}</code></pre>
+        </li>
+
+        <li>
+          <strong>Proxy <code>/ws</code> in <code>client/gleam.toml</code> and subscribe via <code>effect.from</code></strong><br>
+          <code>lustre/dev</code> proxies both HTTP and WebSockets when configured as a list:
+<pre><code>[tools.lustre.dev]
+proxy = [
+  { from = "/api", to = "http://localhost:4567/api" },
+  { from = "/ws", to = "http://localhost:4567/ws" },
+]</code></pre>
+          In <code>client/src/client.gleam</code>, <code>init</code> runs <code>effect.batch([fetch_grrrs(), subscribe_timeline()])</code> using our 18-line <code>@external(javascript, "./ws_ffi.mjs", "connect_timeline")</code> FFI bridge.
+        </li>
+
+        <li>
+          <strong>Open two browser tabs and watch real-time sync!</strong>
+<pre><code># Terminal 1 (lesson-0009/server/):
+./glimr run
+
+# Terminal 2 (lesson-0009/client/):
+gleam run -m lustre/dev start</code></pre>
+          Open <a href="http://localhost:1234" target="_blank" rel="noopener noreferrer">http://localhost:1234</a> in <strong>two side-by-side tabs</strong>. Watch the header badge jump from <code>● 1 online</code> to <code>● 2 online</code>. Post a Grrr in Tab A — it appears in Tab B instantly without refreshing! Close Tab B and watch Tab A drop immediately back to <code>● 1 online</code>.
+        </li>
+      </ol>
+
+      <div class="callout beam">
+        <p class="callout-title">In-Depth: Deduplication by UUIDv7 &amp; Custom Lustre Effects</p>
+        <ul>
+          <li><strong>Why <code>prepend_unique</code> checks <code>g.id == item.id</code>:</strong> When Tab A submits a Grrr, it receives the new post from <em>both</em> the HTTP <code>201 Created</code> response (<code>GrrrPosted</code>) and the WebSocket broadcast (<code>WsFrameReceived</code>). Checking the UUIDv7 <code>id</code> makes both arrivals idempotent so Tab A never renders a duplicate card.</li>
+          <li><strong>Why <code>effect.from(fn(dispatch) { ... })</code> works:</strong> Lustre passes a <code>dispatch</code> callback into your custom effect; whenever <code>ws_ffi.mjs</code> receives a WebSocket frame or open/close event, calling <code>dispatch(WsFrameReceived(frame))</code> feeds it straight into <code>update(model, msg)</code>.</li>
+          <li><strong>Single-node vs. multi-node BEAM:</strong> Here one <code>TimelineHub</code> actor serves one BEAM node; when scaling across multiple servers, OTP's built-in <code>pg</code> (process groups) distributes the exact same pattern across a BEAM cluster with zero Redis.</li>
+        </ul>
+      </div>
+
+      <div class="callout win">
+        <p class="callout-title">Lesson 0009 Win Condition</p>
+        <p>
+          Two Lustre SPA tabs stay live-synced over <code>/ws/timeline</code> via your BEAM/OTP <code>TimelineHub</code> actor: posting in one tab updates the other immediately with zero duplicates, and opening/closing tabs updates the <code>● N online</code> presence badge in real time!
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: RANDOMIZED RETRIEVAL CHECK -->
+    <section id="sec-quiz" class="reveal quiz-pool" data-quiz-count="5">
+      <h2>3. Quick Retrieval Check</h2>
+      <p>Answer from memory — each refresh or reset draws 5 random questions from an 8-question pool.</p>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Why doesn't <code>grrr</code> need Redis PubSub or Laravel Reverb for live timeline broadcasting?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="SQLite does not push WebSocket frames to browsers.">SQLite streams WebSocket frames directly to Chrome.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! BEAM WebSocket connections are lightweight processes coordinated by one in-memory gleam_otp actor.">A BEAM OTP actor fans out directly.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Lustre uses a persistent WebSocket, not 1-second polling.">Lustre polls /api/grrrs every single second.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Browser tabs do not broadcast across different machines via localStorage.">Browser localStorage syncs posts across every machine.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">What does passing <code>Some(selector)</code> from <code>mist.websocket</code>'s <code>on_init</code> accomplish?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="SQLite queries are not run by Mist's process selector.">It selects SQLite rows on each frame.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="CSS selectors belong to the browser DOM, not BEAM processes.">It picks CSS classes for Lustre elements.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! Selecting the client Subject delivers hub messages to handler as mist.Custom(payload).">It routes Subject messages into mist.Custom(payload).</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Authentication tokens are not validated by process.Selector.">It validates bearer tokens before handshake upgrade.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">How does <code>TimelineHub</code> drop the online count immediately when a browser tab closes?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Mist invokes on_close, which sends Leave(client) to TimelineHub to remove it and rebroadcast presence.">Mist calls on_close, sending Leave(client) immediately.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="There is no Redis TTL expiration in our BEAM hub.">Redis expires the presence key after 60s.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="The browser does not need a DELETE /api/presence call.">The browser sends DELETE /api/presence on unload.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="SQLite triggers do not track open TCP sockets.">A SQLite trigger deletes the disconnected socket.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">Why does <code>client.gleam</code> deduplicate incoming Grrrs by <code>id</code> in <code>prepend_unique</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="SQLite enforces a unique index on uuid and inserts one row.">SQLite inserts every posted Grrr twice accidentally.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="lustre/dev proxy forwards each WebSocket frame once.">lustre/dev proxy duplicates every WebSocket text frame.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp.post only sends one HTTP POST request.">rsvp.post always retries every 201 Created response.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! The posting tab receives the new Grrr from both HTTP 201 and the WebSocket broadcast.">Both HTTP 201 and WebSocket deliver it.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="b">
+        <p class="quiz-prompt">Which Lustre helper lets <code>init</code> run both <code>fetch_grrrs()</code> and <code>subscribe_timeline()</code> at startup?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="effect.none() runs zero effects.">effect.none() combining two HTTP requests.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Correct! effect.batch([...]) runs a list of Effect(Msg) values together.">effect.batch([...]) returning one combined Effect(Msg).</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="rsvp.get only creates a single HTTP GET effect.">rsvp.get() chained with a second URL.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="lustre.simple does not support effects at all.">lustre.simple() taking two init functions.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="c">
+        <p class="quiz-prompt">How does <code>subscribe_timeline()</code> feed browser WebSocket events into Lustre's <code>update</code> loop?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Direct DOM mutation bypasses MVU and corrupts Lustre's virtual DOM.">By mutating DOM nodes directly inside ws_ffi.mjs.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="Model is immutable and cannot be mutated from JS.">By mutating Model.grrrs from a global variable.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Correct! effect.from gives us Lustre's dispatch function to send WsStatusChanged and WsFrameReceived.">Via effect.from(fn(dispatch) { ... }) dispatching Msg.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Page reloads would wipe client state and disconnect the socket.">By reloading window.location on every incoming frame.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="a">
+        <p class="quiz-prompt">What guarantees only valid <code>HubMsg</code> variants can be sent to <code>TimelineHub</code>?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Correct! Subject(HubMsg) is parameterized by HubMsg so Gleam checks every process.send at compile time.">Its typed Subject(HubMsg) checked at compile time.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="JSON schemas are not used for internal BEAM actor messages.">A runtime JSON Schema validator inside actor.gleam.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="HTTP middleware does not govern internal BEAM process messages.">Glimr's expects_json middleware on every send call.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Erlang processes don't require SQLite foreign keys.">A SQLite foreign key on the mailbox.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-answer="d">
+        <p class="quiz-prompt">How do you scale this BEAM actor PubSub pattern across multiple server nodes without Redis?</p>
+        <div class="quiz-options">
+          <button type="button" class="quiz-option" data-choice="a" data-explain="Sharing one SQLite file over NFS causes lock corruption.">Mount one SQLite file over shared NFS.</button>
+          <button type="button" class="quiz-option" data-choice="b" data-explain="HTTP redirects do not replicate live WebSocket state.">Redirect all WebSocket traffic via 302 headers.</button>
+          <button type="button" class="quiz-option" data-choice="c" data-explain="Local browser storage is per-device, not cross-node.">Store active socket IDs inside browser localStorage.</button>
+          <button type="button" class="quiz-option" data-choice="d" data-explain="Correct! Erlang/OTP's built-in pg (process groups) distributes PubSub across a BEAM cluster natively.">Use OTP's built-in pg distributed process groups.</button>
+        </div>
+        <div class="quiz-feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-summary">
+        <span data-quiz-score aria-live="polite">Answered 0 / 5 · Correct 0 / 5 · Pool: 5 of 8</span>
+        <button type="button" class="btn-secondary" data-quiz-reset>Reset Quiz</button>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2>4. Primary Documentation &amp; Community</h2>
+      <ul>
+        <li><a href="https://hexdocs.pm/gleam_otp/gleam/otp/actor.html" target="_blank" rel="noopener noreferrer">gleam_otp/actor HexDocs — Typed OTP Actors</a></li>
+        <li><a href="https://hexdocs.pm/mist/mist.html#websocket" target="_blank" rel="noopener noreferrer">Mist HexDocs — mist.websocket</a></li>
+        <li><a href="https://hexdocs.pm/lustre/lustre/effect.html" target="_blank" rel="noopener noreferrer">Lustre Effect — effect.from &amp; effect.batch</a></li>
+        <li><a href="https://discord.gg/Fm8Pwmy" target="_blank" rel="noopener noreferrer">Official Gleam Discord</a> · <a href="https://www.reddit.com/r/gleam/" target="_blank" rel="noopener noreferrer">r/gleam</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="../assets/ui.js"></script>
+  <script src="../assets/quiz.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.GrrrOrbit) {
+      window.GrrrOrbit.mount([
+        { label: 'TimelineHub',  sub: 'gleam_otp actor',     ring: 0, idx: 0, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-beam', snd: 'beam' },
+        { label: 'Subject(Msg)', sub: 'Typed BEAM mailbox',  ring: 0, idx: 1, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-beam', snd: 'gleam' },
+        { label: '/ws/timeline', sub: 'mist.websocket',      ring: 0, idx: 2, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',  snd: 'glimr' },
+        { label: 'effect.from',  sub: 'Lustre WS bridge',    ring: 0, idx: 3, ringCount: 4, col: '--lustre', glow: '--lustre-glow', target: '#sec-lab',  snd: 'lustre' },
+        { label: 'Presence',     sub: 'Join / Leave count',  ring: 1, idx: 0, ringCount: 4, col: '--ok',     glow: '--ok-glow',     target: '#sec-beam', snd: 'pass' },
+        { label: 'on_close',     sub: 'Instant cleanup',     ring: 1, idx: 1, ringCount: 4, col: '--beam',   glow: '--beam-glow',   target: '#sec-beam', snd: 'beam' },
+        { label: 'UUIDv7 dedup', sub: 'Idempotent prepend',  ring: 1, idx: 2, ringCount: 4, col: '--gleam',  glow: '--gleam-glow',  target: '#sec-lab',  snd: 'gleam' },
+        { label: '/ws proxy',    sub: 'lustre/dev -> :4567', ring: 1, idx: 3, ringCount: 4, col: '--glimr',  glow: '--glimr-glow',  target: '#sec-lab',  snd: 'glimr' }
+      ]);
+    }
+
+    const pkt = document.getElementById('hub-pkt');
+    const countText = document.getElementById('hub-count');
+    const banner = document.getElementById('hub-banner');
+    let tabBConnected = false;
+
+    function animatePts(pts, colorVar) {
+      pkt.setAttribute('fill', `var(${colorVar})`);
+      if (!window.GrrrEnv || !window.GrrrEnv.motion) {
+        const last = pts[pts.length - 1];
+        pkt.setAttribute('cx', last[0]);
+        pkt.setAttribute('cy', last[1]);
+        return;
+      }
+      const start = performance.now(), dur = 760;
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const segs = pts.length - 1;
+        const sc = t * segs;
+        const i = Math.min(segs - 1, Math.floor(sc));
+        const lt = sc - i;
+        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+        pkt.setAttribute('cx', (x0 + (x1 - x0) * lt).toFixed(1));
+        pkt.setAttribute('cy', (y0 + (y1 - y0) * lt).toFixed(1));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    document.querySelectorAll('[data-hub-act]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sfx = window.GrrrSFX || { beam() {}, pass() {}, lustre() {} };
+        const act = btn.dataset.hubAct;
+        if (act === 'join') {
+          tabBConnected = true;
+          countText.textContent = 'clients: [TabB, TabA] (2 online)';
+          banner.className = 'sim-result-banner is-ok';
+          banner.textContent = 'Join(TabB) -> TimelineHub broadcasts {"type":"presence","online":2} to both tabs!';
+          animatePts([[725, 145], [401, 96], [725, 47]], '--beam');
+          sfx.beam();
+        } else if (act === 'post') {
+          banner.className = 'sim-result-banner is-ok';
+          banner.textContent = tabBConnected
+            ? 'POST /api/grrrs -> BroadcastGrrr -> Tab A dedups by UUIDv7, Tab B prepends live!'
+            : 'POST /api/grrrs -> BroadcastGrrr -> Tab A dedups by UUIDv7 (connect Tab B to see multi-tab sync!)';
+          animatePts([[107, 96], [401, 96], [725, tabBConnected ? 145 : 47]], '--ok');
+          sfx.pass();
+        } else {
+          tabBConnected = false;
+          countText.textContent = 'clients: [TabA] (1 online)';
+          banner.className = 'sim-result-banner is-ok';
+          banner.textContent = 'on_close -> Leave(TabB) -> TimelineHub removes TabB and broadcasts {"type":"presence","online":1} immediately!';
+          animatePts([[725, 145], [401, 96], [725, 47]], '--lustre');
+          sfx.lustre();
+        }
+      });
+    });
+  });
+  </script>
+</body>
+</html>

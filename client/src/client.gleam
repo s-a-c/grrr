@@ -17,6 +17,13 @@ import lustre/element/html.{
 import lustre/event
 import rsvp
 
+@external(javascript, "./ws_ffi.mjs", "connect_timeline")
+fn connect_timeline(
+  path: String,
+  on_status: fn(Bool) -> Nil,
+  on_message: fn(String) -> Nil,
+) -> Nil
+
 pub fn main() {
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
@@ -35,6 +42,8 @@ pub type Model {
     grrrs: List(PostedGrrr),
     loading: Bool,
     submitting: Bool,
+    online: Int,
+    ws_connected: Bool,
   )
 }
 
@@ -44,6 +53,13 @@ pub type Msg {
   Submitted
   GrrrsFetched(Result(List(PostedGrrr), rsvp.Error(String)))
   GrrrPosted(Result(PostedGrrr, rsvp.Error(String)))
+  WsStatusChanged(Bool)
+  WsFrameReceived(String)
+}
+
+type WsEvent {
+  PresenceEvent(online: Int)
+  GrrrCreatedEvent(grrr: PostedGrrr)
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
@@ -55,8 +71,10 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       grrrs: [],
       loading: True,
       submitting: False,
+      online: 0,
+      ws_connected: False,
     )
-  #(model, fetch_grrrs())
+  #(model, effect.batch([fetch_grrrs(), subscribe_timeline()]))
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -99,10 +117,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     GrrrPosted(Ok(created)) -> #(
-      Model(..model, body: "", errors: [], submitting: False, grrrs: [
-        created,
-        ..model.grrrs
-      ]),
+      Model(
+        ..model,
+        body: "",
+        errors: [],
+        submitting: False,
+        grrrs: prepend_unique(model.grrrs, created),
+      ),
       effect.none(),
     )
 
@@ -110,7 +131,45 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(..model, submitting: False, errors: [format_http_error(err)]),
       effect.none(),
     )
+
+    WsStatusChanged(connected) -> #(
+      Model(..model, ws_connected: connected),
+      effect.none(),
+    )
+
+    WsFrameReceived(raw) ->
+      case json.parse(raw, ws_event_decoder()) {
+        Ok(PresenceEvent(online:)) -> #(
+          Model(..model, online: online),
+          effect.none(),
+        )
+        Ok(GrrrCreatedEvent(grrr:)) -> #(
+          Model(..model, grrrs: prepend_unique(model.grrrs, grrr)),
+          effect.none(),
+        )
+        Error(_) -> #(model, effect.none())
+      }
   }
+}
+
+fn prepend_unique(
+  grrrs: List(PostedGrrr),
+  item: PostedGrrr,
+) -> List(PostedGrrr) {
+  case list.any(grrrs, fn(g) { g.id == item.id }) {
+    True -> grrrs
+    False -> [item, ..grrrs]
+  }
+}
+
+fn subscribe_timeline() -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    connect_timeline(
+      "/ws/timeline",
+      fn(connected) { dispatch(WsStatusChanged(connected)) },
+      fn(frame) { dispatch(WsFrameReceived(frame)) },
+    )
+  })
 }
 
 fn fetch_grrrs() -> Effect(Msg) {
@@ -129,6 +188,21 @@ fn post_grrr(draft: DraftGrrr) -> Effect(Msg) {
   rsvp.post("/api/grrrs", payload, rsvp.expect_json(decoder, GrrrPosted))
 }
 
+fn ws_event_decoder() -> decode.Decoder(WsEvent) {
+  use kind <- decode.field("type", decode.string)
+  case kind {
+    "presence" -> {
+      use online <- decode.field("online", decode.int)
+      decode.success(PresenceEvent(online:))
+    }
+    "grrr_created" -> {
+      use grrr <- decode.field("grrr", grrr_decoder())
+      decode.success(GrrrCreatedEvent(grrr:))
+    }
+    _ -> decode.failure(PresenceEvent(online: 0), "WsEvent")
+  }
+}
+
 fn grrr_decoder() -> decode.Decoder(PostedGrrr) {
   use id <- decode.field("id", decode.string)
   use author <- decode.field("author_handle", decode.string)
@@ -144,28 +218,49 @@ fn view(model: Model) -> Element(Msg) {
     False -> "text-[#94e2d5]"
   }
 
+  let presence_class = case model.ws_connected {
+    True -> "border-[#94e2d5] text-[#94e2d5]"
+    False -> "border-[#6c7086] text-[#a6adc8]"
+  }
+
+  let presence_text = case model.ws_connected {
+    True -> "● " <> int.to_string(model.online) <> " online"
+    False -> "○ reconnecting..."
+  }
+
   div([class("min-h-screen bg-[#1e1e2e] text-[#cdd6f4] py-10 px-4 font-sans")], [
     div([class("max-w-2xl mx-auto space-y-6")], [
       header(
         [
           class(
-            "flex items-center justify-between border-b border-[#45475a] pb-4",
+            "flex items-center justify-between border-b border-[#45475a] pb-4 gap-3 flex-wrap",
           ),
         ],
         [
           h1([class("text-2xl font-extrabold text-[#cba6f7]")], [
             text("grrr · Lustre SPA"),
           ]),
-          span(
-            [
-              class(
-                "rounded-full border border-[#89b4fa] bg-[#313244] px-3 py-1 text-xs font-mono",
-              ),
-            ],
-            [
-              text(int.to_string(list.length(model.grrrs)) <> " grrrs"),
-            ],
-          ),
+          div([class("flex items-center gap-2")], [
+            span(
+              [
+                class(
+                  "rounded-full border bg-[#313244] px-3 py-1 text-xs font-mono "
+                  <> presence_class,
+                ),
+              ],
+              [text(presence_text)],
+            ),
+            span(
+              [
+                class(
+                  "rounded-full border border-[#89b4fa] bg-[#313244] px-3 py-1 text-xs font-mono",
+                ),
+              ],
+              [
+                text(int.to_string(list.length(model.grrrs)) <> " grrrs"),
+              ],
+            ),
+          ]),
         ],
       ),
       form(

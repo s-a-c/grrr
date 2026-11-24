@@ -15,6 +15,7 @@
 
   /* 0. Common Course Lesson Registry (reverse order: newest first) */
   const GRRR_LESSONS = [
+    { id: '0009', short: 'BEAM PubSub',    file: '0009-beam-otp-pubsub-presence-and-websockets.html' },
     { id: '0008', short: 'Lustre Effects', file: '0008-lustre-application-effects-and-rsvp.html' },
     { id: '0007', short: 'Lustre SPA',     file: '0007-lustre-spa-mvu-and-shared-in-browser.html' },
     { id: '0006', short: 'Loom Admin',     file: '0006-loom-admin-portal-and-components.html' },

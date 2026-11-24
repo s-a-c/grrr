@@ -28,6 +28,7 @@
 - **Git & Worktree Workflow (authorized by user):**
   - Bare repo at `grrr/.bare` + 1-line `grrr/.git` redirect (`gitdir: ./.bare`) + sibling worktrees (`main/`, `lesson-0001/`, `lesson-0002/`, ...).
   - Agent is authorized to run lesson-boundary branch/worktree/commit/tag/push steps in this repo.
+  - **Auto-advance:** After every `verify and close lesson-NNNN`, automatically open the next lesson worktree (`lesson-(NNNN+1)` from `main`) and scaffold/deliver the next lesson without waiting to be asked.
   - Branches: `lesson-NNNN` (kept permanently, fast-forward merged into `main`).
   - Tags: `checkpoint/lesson-NNNN` (annotated).
   - Paths in lessons: always use portable worktree-relative paths (`lesson-NNNN/` root, `cd shared`, `cd server`, `cd client`, `./scripts/verify-lesson.sh`) — never hardcode `/Users/s-a-c/...`.

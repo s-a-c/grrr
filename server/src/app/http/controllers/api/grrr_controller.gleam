@@ -1,4 +1,5 @@
 import app/app.{type App}
+import app/realtime/timeline_hub
 import database/main/models/grrr/gen/grrr.{type Grrr}
 import gleam/dynamic/decode
 import gleam/int
@@ -70,7 +71,15 @@ pub fn store(ctx: Context(App)) -> Response {
             updated_at: now,
           )
 
-          json.object([#("grrr", encode_grrr(saved))])
+          let grrr_json = encode_grrr(saved)
+          json.object([
+            #("type", json.string("grrr_created")),
+            #("grrr", grrr_json),
+          ])
+          |> json.to_string()
+          |> timeline_hub.broadcast_grrr(ctx.app.hub, _)
+
+          json.object([#("grrr", grrr_json)])
           |> response.json(201)
         }
       }
