@@ -2,7 +2,7 @@
 # Shared project Worktrunk configuration for `grrr`
 # See docs/REPO-MANAGEMENT.md for both Worktrunk and manual git instructions.
 
-[post-create]
+[pre-start]
 setup = "./scripts/setup-worktree.sh"
 
 [pre-merge]
