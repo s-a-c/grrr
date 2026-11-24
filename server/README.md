@@ -203,7 +203,7 @@ Use the `vite.tags()` function in your layout to include bundled assets:
 import glimr/vite
 ---
 
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     {{{ vite.tags("src/resources/ts/app.ts") }}}
