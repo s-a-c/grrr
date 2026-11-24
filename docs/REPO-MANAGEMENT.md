@@ -17,7 +17,7 @@ grrr/
 - **Tags:** `checkpoint/lesson-0001`, `checkpoint/lesson-0002`, … (namespaced under `checkpoint/` so tags never collide with branch names).
 - **Tracked project configs:**
   - `.gitignore` / `.gitattributes` (ignores `**/build/`, `**/.env`, local SQLite DBs; tracks `**/manifest.toml` and `**/.env.example`).
-  - `.config/wt.toml` (shared [Worktrunk](https://worktrunk.dev) hooks: `[post-create]` runs `./scripts/setup-worktree.sh`, `[pre-merge]` runs `./scripts/verify-lesson.sh`).
+  - `.config/wt.toml` (shared [Worktrunk](https://worktrunk.dev) hooks: `[pre-start]` runs `./scripts/setup-worktree.sh`, `[pre-merge]` runs `./scripts/verify-lesson.sh`).
 
 ---
 
